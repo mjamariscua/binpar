@@ -47,3 +47,6 @@ next-env.d.ts
 # instrucciones locales para el asistente de IA: no se publican
 /CLAUDE.md
 /.claude/
+
+# guías de estudio personales (recorrido por módulo): no se publican
+/recorrido/
