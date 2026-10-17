@@ -6,7 +6,7 @@ periódicas del problema de los tres cuerpos (Parte B).
 
 **Demo:** https://binpar.vercel.app
 
-> **Estado:** módulo 1 de 6 (base del proyecto y motor de física con tests).
+> **Estado:** módulo 2 de 6: motor de física y Parte B (galería de tres cuerpos) funcionales.
 > Este README se completa en el módulo final con decisiones, costes, uso de IA
 > y límites conocidos.
 
