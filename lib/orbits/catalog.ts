@@ -25,6 +25,24 @@ export type OrbitSlug =
   | "moth-i"
   | "yin-yang-i";
 
+/** Agrupación de la galería: soluciones clásicas frente a las halladas por búsqueda numérica en 2013. */
+export type OrbitFamily = "clasica" | "suvakov-2013";
+
+/**
+ * Los nombres de Šuvakov y Dmitrašinović (mariposa, polilla, gafas, yin-yang)
+ * describen la figura que cada órbita traza en la «esfera de formas», no su
+ * recorrido en el plano. Se explica en el detalle para que nadie busque una
+ * polilla en la animación.
+ */
+export const SHAPE_SPHERE_NOTE =
+  "El nombre describe la figura que la órbita dibuja en la «esfera de formas», un mapa de la forma del " +
+  "triángulo que forman los tres cuerpos en cada instante, no el recorrido que ves en el plano.";
+
+export const FAMILY_LABELS: Record<OrbitFamily, string> = {
+  clasica: "Clásicas",
+  "suvakov-2013": "Šuvakov y Dmitrašinović (2013)",
+};
+
 export interface Citation {
   readonly authors: string;
   readonly title: string;
@@ -39,6 +57,7 @@ export interface PeriodicOrbit {
   readonly slug: OrbitSlug;
   readonly name: string;
   readonly summary: string;
+  readonly family: OrbitFamily;
   /** Clase topológica de Šuvakov & Dmitrašinović (p. ej. «I.A.1»), si la tiene. */
   readonly classification?: string;
   readonly system: GravitySystem;
@@ -133,6 +152,7 @@ export const ORBITS: readonly PeriodicOrbit[] = [
     slug: "lagrange",
     name: "Lagrange",
     summary: "Un triángulo equilátero que gira rígido: la primera solución exacta, de 1772.",
+    family: "clasica",
     system: EQUAL_MASSES,
     bodies: lagrange.bodies,
     period: lagrange.period,
@@ -156,6 +176,7 @@ export const ORBITS: readonly PeriodicOrbit[] = [
     slug: "figura-de-ocho",
     name: "Figura de ocho",
     summary: "Los tres cuerpos se persiguen sobre un mismo ocho. Estable: sobrevive a pequeños empujones.",
+    family: "clasica",
     system: EQUAL_MASSES,
     bodies: [
       { position: { x: 0.97000436, y: -0.24308753 }, velocity: { x: 0.466203685, y: 0.43236573 } },
@@ -184,7 +205,8 @@ export const ORBITS: readonly PeriodicOrbit[] = [
   {
     slug: "butterfly-i",
     name: "Butterfly I",
-    summary: "Dos alas simétricas que se dibujan una y otra vez, con pasadas muy cercanas en el centro.",
+    summary: "Encontrada por ordenador en 2013. En cada vuelta, dos de los cuerpos se cruzan a solo una centésima de unidad.",
+    family: "suvakov-2013",
     classification: "I.A.1",
     system: EQUAL_MASSES,
     bodies: isoscelesCollinear(0.3068934205, 0.1255065670),
@@ -197,7 +219,8 @@ export const ORBITS: readonly PeriodicOrbit[] = [
   {
     slug: "goggles",
     name: "Goggles",
-    summary: "Unas gafas: dos lazos unidos por un puente, recorridos a velocidades muy distintas.",
+    summary: "Arranca con los cuerpos casi quietos: es la de menor velocidad inicial de las cuatro órbitas de 2013.",
+    family: "suvakov-2013",
     classification: "I.B.5",
     system: EQUAL_MASSES,
     bodies: isoscelesCollinear(0.0833000718, 0.1278892555),
@@ -210,7 +233,8 @@ export const ORBITS: readonly PeriodicOrbit[] = [
   {
     slug: "moth-i",
     name: "Moth I",
-    summary: "Una polilla: alas grandes y un cuerpo central que los tres recorren por turnos.",
+    summary: "La más holgada de las cuatro órbitas de 2013: dos cuerpos nunca se acercan a menos de unas 8 centésimas de unidad.",
+    family: "suvakov-2013",
     classification: "I.B.1",
     system: EQUAL_MASSES,
     bodies: isoscelesCollinear(0.4644451728, 0.3960600146),
@@ -225,7 +249,8 @@ export const ORBITS: readonly PeriodicOrbit[] = [
   {
     slug: "yin-yang-i",
     name: "Yin-Yang I",
-    summary: "Sin ejes de simetría, solo un centro: la órbita gira sobre sí misma como el símbolo.",
+    summary: "Vuelve dos veces a la forma inicial en cada periodo; por eso se publicaron dos juegos de condiciones para ella.",
+    family: "suvakov-2013",
     classification: "II.C.2b",
     system: EQUAL_MASSES,
     bodies: isoscelesCollinear(0.2827020949, 0.3272089716),

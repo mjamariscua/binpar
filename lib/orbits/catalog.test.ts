@@ -7,6 +7,7 @@ import {
   totalEnergy,
 } from "@/lib/physics/invariants";
 import { gravityDerivative, packState } from "@/lib/physics/nbody";
+import { createRK4 } from "@/lib/physics/rk4";
 import {
   finalState,
   initialState,
@@ -126,5 +127,54 @@ describe("procedencia: arXiv:1312.6796 frente a Li & Liao (2017)", () => {
 
   it("Goggles: con su T publicado (10.46682…) el hueco es visible (> 1e-4)", () => {
     expect(closureAt(0.0833000564575194, 0.127889282226563, 10.4668176954385)).toBeGreaterThan(1e-4);
+  });
+});
+
+/**
+ * Las descripciones de la galería citan hechos medibles; estos tests los
+ * comprueban para que el texto no pueda desviarse de la física.
+ */
+describe("las descripciones dicen la verdad", () => {
+  /** Distancia mínima entre dos cuerpos en todo el periodo, medida en cada paso de RK4. */
+  const minSeparation = (slug: string) => {
+    const orbit = getOrbit(slug)!;
+    const y = initialStateOf(orbit);
+    const step = createRK4(y.length, (s, out) => gravityDerivative(orbit.system, s, out));
+    const steps = orbit.integration.intervals * orbit.integration.substeps;
+    const h = orbit.period / steps;
+    let min = Infinity;
+    for (let n = 0; n < steps; n++) {
+      step(y, h);
+      for (let i = 0; i < 3; i++) {
+        for (let j = i + 1; j < 3; j++) {
+          min = Math.min(min, Math.hypot(y[j * 4] - y[i * 4], y[j * 4 + 1] - y[i * 4 + 1]));
+        }
+      }
+    }
+    return min;
+  };
+  const suvakov = ORBITS.filter((o) => o.family === "suvakov-2013");
+
+  it("Butterfly I: dos cuerpos se cruzan a una centésima de unidad", () => {
+    const d = minSeparation("butterfly-i");
+    expect(d).toBeGreaterThan(0.009);
+    expect(d).toBeLessThan(0.013);
+  });
+
+  it("Moth I: la más holgada de 2013, con unas 8 centésimas frente a 1–2 en las demás", () => {
+    const moth = minSeparation("moth-i");
+    expect(moth).toBeGreaterThan(0.075);
+    expect(moth).toBeLessThan(0.085);
+    for (const other of suvakov.filter((o) => o.slug !== "moth-i")) {
+      expect(minSeparation(other.slug)).toBeLessThan(0.02);
+    }
+  });
+
+  it("Goggles: la menor velocidad inicial de las cuatro de 2013", () => {
+    const speed = (o: (typeof ORBITS)[number]) => Math.hypot(o.bodies[0].velocity.x, o.bodies[0].velocity.y);
+    const goggles = speed(getOrbit("goggles")!);
+    for (const other of suvakov.filter((o) => o.slug !== "goggles")) {
+      expect(goggles).toBeLessThan(speed(other));
+    }
   });
 });
