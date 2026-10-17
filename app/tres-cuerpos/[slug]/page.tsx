@@ -51,7 +51,7 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
           {FAMILY_LABELS[orbit.family]}
           {orbit.classification && <span className="font-mono"> · {orbit.classification}</span>}
         </p>
-        <h1 className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{orbit.name}</h1>
+        <h1 className="mt-1 font-heading text-5xl sm:text-7xl">{orbit.name}</h1>
         <p className="mt-3 max-w-prose text-lg text-muted-foreground">{orbit.summary}</p>
         {orbit.family === "suvakov-2013" && (
           <p className="mt-2 max-w-prose text-sm text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>

@@ -7,7 +7,7 @@ export function SiteHeader() {
         aria-label="Principal"
         className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6"
       >
-        <Link href="/" className="rounded-sm text-lg font-semibold tracking-tight">
+        <Link href="/" className="rounded-sm font-heading text-2xl italic">
           Caída
         </Link>
         <Link

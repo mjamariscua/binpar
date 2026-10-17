@@ -9,4 +9,4 @@ export const BODY_COLORS = ["#f5b83d", "#5ec8f2", "#f2708a"] as const;
  * Fondo de la escena 3D, opaco y con el mismo valor que el contenedor: el
  * canvas tapa el póster SVG en cuanto pinta su primer fotograma.
  */
-export const SCENE_BACKGROUND = "#0c0c10";
+export const SCENE_BACKGROUND = "#0a0b10";
