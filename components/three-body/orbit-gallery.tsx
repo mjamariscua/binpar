@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, ViewTransition } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { FAMILY_LABELS, type OrbitFamily, type OrbitSlug } from "@/lib/orbits/catalog";
 import type { OrbitSummary } from "@/lib/orbits/summary";
 import { matchesFilter, useGalleryStore, type GalleryFilter } from "@/lib/store/gallery-store";
-import { OrbitDrawing } from "./orbit-drawing";
+import { LiveThumbnail } from "./live-thumbnail";
 
 export interface GalleryItem {
   readonly slug: OrbitSlug;
@@ -81,9 +81,12 @@ export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
               onClick={() => rememberExit(item.slug, window.scrollY)}
               className="group flex h-full flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none"
             >
-              <div className="aspect-[4/3] w-full rounded-lg bg-background/60 p-3">
-                <OrbitDrawing svg={item.svg} label={`Recorrido de ${item.name}`} />
-              </div>
+              {/* Mismo `name` que el visor del detalle: el navegador transforma uno en otro al navegar. */}
+              <ViewTransition name={`orbita-${item.slug}`} share="morph" default="none">
+                <div className="aspect-[4/3] w-full rounded-lg bg-background/60 p-3">
+                  <LiveThumbnail slug={item.slug} name={item.name} svg={item.svg} />
+                </div>
+              </ViewTransition>
               <div className="mt-4 flex items-baseline justify-between gap-3">
                 <h3 className="text-xl font-semibold tracking-tight">{item.name}</h3>
                 {item.classification && (

@@ -90,3 +90,46 @@
     background: rgb(245 184 61 / 35%);
   }
 }
+
+/*
+ * Transición de vista galería → detalle: la miniatura se transforma en el
+ * visor (React <ViewTransition> + View Transitions API del navegador). Sin
+ * soporte, la navegación funciona igual, sin animar.
+ */
+::view-transition-group(.morph) {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: morph-blur;
+}
+@keyframes morph-blur {
+  35% {
+    filter: blur(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Órbitas de la portada (components/gravity/hero-orbits.tsx). */
+.hero-orbit {
+  transform-origin: 0 0;
+  transform-box: view-box;
+  animation: hero-orbit var(--orbit-duration, 20s) linear infinite;
+}
+@keyframes hero-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-orbit {
+    animation: none;
+  }
+}
