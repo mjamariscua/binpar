@@ -3,7 +3,9 @@
 import { Line, OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { use, useEffect, useMemo, useRef } from "react";
-import type { Mesh } from "three";
+import { AdditiveBlending, Color, type Mesh } from "three";
+import { FadingTrail } from "@/components/scene/fading-trail";
+import { SceneEffects } from "@/components/scene/scene-effects";
 import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
@@ -11,26 +13,36 @@ import { BODY_COLORS, SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import { bodyPath, orbitBounds, padBounds } from "@/lib/orbits/geometry";
 import { loadTrajectory } from "@/lib/orbits/load-trajectory";
 import { INITIAL_PLAYBACK } from "@/lib/orbits/playback";
+import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
 import { usePlaybackStore } from "@/lib/store/playback-store";
 
 /** Radio de cada cuerpo en píxeles de pantalla, independiente del zoom. */
-const BODY_RADIUS_PX = 6;
+const BODY_RADIUS_PX = 5;
 /** Margen alrededor del recorrido, como fracción del lado mayor. */
 const VIEW_PADDING = 0.06;
 /** Distancia mínima entre vértices del trazo, como fracción del lado mayor. */
 const PATH_MIN_SEGMENT = 0.001;
+/** La estela cubre este tramo del periodo detrás de cada cuerpo. */
+const TRAIL_FRACTION = 0.16;
+const TRAIL_POINTS = 160;
+/**
+ * Los cuerpos se pintan con un color «más blanco que el blanco» (componentes
+ * > 1, sin tone mapping) para que superen el umbral del bloom y brillen.
+ */
+const GLOW = 2.4;
 
 /**
  * Simulación de una órbita. Se carga con React.lazy (three.js solo se descarga
  * en el detalle) y suspende con `use()` hasta que el worker entrega el periodo.
  *
- * Vista 2D: cámara ortográfica cenital encuadrada al recorrido. Se usa WebGL y
- * no SVG/Canvas 2D porque la capa visual del módulo 4 (bloom, estelas) se
- * construye sobre esta misma escena.
+ * Vista 2D: cámara ortográfica cenital encuadrada al recorrido, con el
+ * recorrido completo tenue de fondo, una estela que se desvanece detrás de
+ * cada cuerpo y bloom (si el dispositivo lo permite).
  */
 export default function OrbitScene({ slug }: { slug: OrbitSlug }) {
   const trajectory = use(loadTrajectory(slug));
   const playing = usePlaybackStore((s) => (s.bySlug[slug] ?? INITIAL_PLAYBACK).playing);
+  const { effects } = useVisualQuality();
 
   return (
     <Canvas
@@ -41,6 +53,7 @@ export default function OrbitScene({ slug }: { slug: OrbitSlug }) {
     >
       <color attach="background" args={[SCENE_BACKGROUND]} />
       <SceneContent slug={slug} trajectory={trajectory} />
+      <SceneEffects enabled={effects} />
     </Canvas>
   );
 }
@@ -68,7 +81,7 @@ function SceneContent({ slug, trajectory }: { slug: OrbitSlug; trajectory: Traje
     <>
       <OrthographicCamera makeDefault position={[centerX, centerY, 10]} zoom={zoom} near={0.1} far={100} />
       {paths.map((points, i) => (
-        <Line key={i} points={points} color={BODY_COLORS[i]} lineWidth={1.25} transparent opacity={0.35} />
+        <Line key={i} points={points} color={BODY_COLORS[i]} lineWidth={1} transparent opacity={0.16} />
       ))}
       <Bodies slug={slug} trajectory={trajectory} radius={BODY_RADIUS_PX / zoom} />
     </>
@@ -76,32 +89,72 @@ function SceneContent({ slug, trajectory }: { slug: OrbitSlug; trajectory: Traje
 }
 
 function Bodies({ slug, trajectory, radius }: { slug: OrbitSlug; trajectory: Trajectory; radius: number }) {
+  const size = useThree((s) => s.size);
   const meshes = useRef<(Mesh | null)[]>([]);
   const state = useMemo(() => new Float64Array(trajectory.bodyCount * STRIDE), [trajectory]);
+  const trailXY = useMemo(() => BODY_COLORS.map(() => new Float32Array(TRAIL_POINTS * 2)), []);
+  const trails = useMemo(() => BODY_COLORS.map((color) => new FadingTrail(color, TRAIL_POINTS, 2.5)), []);
+  const glowColors = useMemo(() => BODY_COLORS.map((c) => new Color(c).multiplyScalar(GLOW)), []);
 
-  // Un único reloj: este useFrame avanza el tiempo en el store y coloca los
-  // cuerpos interpolando el periodo precomputado. Sin renders de React.
+  useEffect(() => () => trails.forEach((t) => t.dispose()), [trails]);
+  useEffect(() => trails.forEach((t) => t.setResolution(size.width, size.height)), [trails, size]);
+
+  // Un único reloj: este useFrame avanza el tiempo en el store, coloca los
+  // cuerpos interpolando el periodo precomputado y redibuja las estelas.
+  // Todo fuera de React: ni un render por fotograma.
   useFrame((_, delta) => {
     usePlaybackStore.getState().advance(slug, delta, trajectory.period);
     const { time } = usePlaybackStore.getState().bySlug[slug] ?? INITIAL_PLAYBACK;
-    stateAt(trajectory, time, state);
+
+    sampleTrails(trajectory, time, trajectory.period * TRAIL_FRACTION, state, trailXY);
+    trails.forEach((trail, b) => trail.update(trailXY[b], TRAIL_POINTS));
+
+    // El último estado calculado es el de `time`: ahí van los cuerpos.
     meshes.current.forEach((mesh, i) => {
       mesh?.position.set(state[i * STRIDE], state[i * STRIDE + 1], 1);
     });
   });
 
-  return BODY_COLORS.map((color, i) => (
-    <mesh
-      key={i}
-      scale={radius}
-      ref={(mesh) => {
-        meshes.current[i] = mesh;
-      }}
-    >
-      <circleGeometry args={[1, 32]} />
-      <meshBasicMaterial color={color} />
-    </mesh>
-  ));
+  return (
+    <>
+      {trails.map((trail, i) => (
+        <primitive key={`trail-${i}`} object={trail.object} />
+      ))}
+      {BODY_COLORS.map((color, i) => (
+        <mesh
+          key={i}
+          scale={radius}
+          ref={(mesh) => {
+            meshes.current[i] = mesh;
+          }}
+        >
+          <circleGeometry args={[1, 32]} />
+          <meshBasicMaterial color={glowColors[i]} toneMapped={false} />
+          {/* Halo suave alrededor del cuerpo (aditivo: solo aclara). */}
+          <mesh scale={3} position={[0, 0, -0.1]}>
+            <circleGeometry args={[1, 32]} />
+            <meshBasicMaterial color={color} transparent opacity={0.12} blending={AdditiveBlending} depthWrite={false} />
+          </mesh>
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Rellena la estela de cada cuerpo con sus posiciones en [time − span, time],
+ * de la cola (más antiguo) a la cabeza. Al terminar, `state` contiene el
+ * estado en `time`, que es donde se dibujan los cuerpos.
+ */
+function sampleTrails(trajectory: Trajectory, time: number, span: number, state: Float64Array, trails: Float32Array[]) {
+  const points = trails[0].length / 2;
+  for (let i = 0; i < points; i++) {
+    stateAt(trajectory, time - span + (span * i) / (points - 1), state);
+    for (let b = 0; b < trails.length; b++) {
+      trails[b][i * 2] = state[b * STRIDE];
+      trails[b][i * 2 + 1] = state[b * STRIDE + 1];
+    }
+  }
 }
 
 /** [x0, y0, x1, y1, …] → [x0, y0, 0, x1, y1, 0, …], el formato plano que espera <Line>. */

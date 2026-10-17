@@ -3,7 +3,9 @@
 import { Line, OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { BufferAttribute, BufferGeometry, Line as ThreeLine, LineBasicMaterial, type Mesh } from "three";
+import { AdditiveBlending, Color, type Mesh } from "three";
+import { FadingTrail } from "@/components/scene/fading-trail";
+import { SceneEffects } from "@/components/scene/scene-effects";
 import { centralGravity } from "@/lib/physics/kepler";
 import { createRK4 } from "@/lib/physics/rk4";
 import {
@@ -16,6 +18,7 @@ import {
   unitsToKms,
 } from "@/lib/gravity/sandbox";
 import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
+import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
 import { useLabStore, type FlightStatus } from "@/lib/store/lab-store";
 
 /** Medio lado visible, en radios del planeta. */
@@ -26,7 +29,9 @@ const ARROW_UNITS_PER_KMS = 0.3;
 export const SIM_UNITS_PER_SECOND = 1.5;
 /** Paso máximo de RK4: fino cerca del planeta, donde la órbita se curva más. */
 const MAX_STEP = 0.002;
-const TRAIL_POINTS = 900;
+const TRAIL_POINTS = 700;
+/** Color del satélite por encima de 1 (sin tone mapping) para que el bloom lo haga brillar. */
+const SATELLITE_GLOW = new Color("#f5b83d").multiplyScalar(2.6);
 const PREVIEW_STEPS = 4000;
 const PREVIEW_DT = 0.01;
 
@@ -34,10 +39,12 @@ const step = createRK4(4, centralGravity(GM));
 
 /** Escena del capítulo 3: planeta, lanzamiento por arrastre, trayectoria prevista y vuelo en directo. */
 export default function SandboxScene() {
+  const { effects } = useVisualQuality();
   return (
     <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: false }}>
       <color attach="background" args={[SCENE_BACKGROUND]} />
       <SceneContent />
+      <SceneEffects enabled={effects} />
     </Canvas>
   );
 }
@@ -56,13 +63,16 @@ function SceneContent() {
   );
 }
 
+/** Planeta con una atmósfera hecha de anillos aditivos cada vez más tenues. */
 function Planet() {
   return (
     <group>
-      <mesh scale={PLANET_RADIUS * 1.15}>
-        <circleGeometry args={[1, 64]} />
-        <meshBasicMaterial color="#5ec8f2" transparent opacity={0.12} />
-      </mesh>
+      {[1.35, 1.2, 1.08].map((scale, i) => (
+        <mesh key={scale} scale={PLANET_RADIUS * scale} position={[0, 0, -0.2]}>
+          <circleGeometry args={[1, 64]} />
+          <meshBasicMaterial color="#5ec8f2" transparent opacity={0.05 + i * 0.04} blending={AdditiveBlending} depthWrite={false} />
+        </mesh>
+      ))}
       <mesh scale={PLANET_RADIUS}>
         <circleGeometry args={[1, 64]} />
         <meshBasicMaterial color="#2a6f97" />
@@ -114,30 +124,25 @@ function Preview() {
 function Satellite({ pixel }: { pixel: number }) {
   const launch = useLabStore((s) => s.launch);
   const setFlight = useLabStore((s) => s.setFlight);
+  const size = useThree((s) => s.size);
   const mesh = useRef<Mesh>(null);
   const state = useRef<Float64Array>(Float64Array.from([0, LAUNCH_RADIUS, 0, 0]));
   const status = useRef<FlightStatus>("esperando");
   const lastReport = useRef(0);
 
-  const trail = useMemo(() => {
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(new Float32Array(TRAIL_POINTS * 3), 3));
-    geometry.setDrawRange(0, 0);
-    return new ThreeLine(geometry, new LineBasicMaterial({ color: "#f5b83d", transparent: true, opacity: 0.8 }));
-  }, []);
+  // Estela: búfer circular de posiciones [x, y] y una línea que se desvanece.
+  const trailXY = useMemo(() => new Float32Array(TRAIL_POINTS * 2), []);
   const trailCount = useRef(0);
-
-  useEffect(() => () => {
-    trail.geometry.dispose();
-    (trail.material as LineBasicMaterial).dispose();
-  }, [trail]);
+  const trail = useMemo(() => new FadingTrail("#f5b83d", TRAIL_POINTS, 2.5), []);
+  useEffect(() => () => trail.dispose(), [trail]);
+  useEffect(() => trail.setResolution(size.width, size.height), [trail, size]);
 
   useEffect(() => {
     if (!launch) return;
     state.current = launchState(launch.speedKms, launch.angleDeg);
     status.current = "en-vuelo";
     trailCount.current = 0;
-    trail.geometry.setDrawRange(0, 0);
+    trail.hide();
   }, [launch, trail]);
 
   useFrame((_, delta) => {
@@ -160,7 +165,8 @@ function Satellite({ pixel }: { pixel: number }) {
           break;
         }
       }
-      pushTrail(trail, trailCount, s[0], s[1]);
+      pushPoint(trailXY, trailCount, s[0], s[1]);
+      trail.update(trailXY, trailCount.current);
     }
     mesh.current?.position.set(s[0], s[1], 1);
 
@@ -186,30 +192,24 @@ function Satellite({ pixel }: { pixel: number }) {
 
   return (
     <>
-      <primitive object={trail} />
-      <mesh ref={mesh} position={[0, LAUNCH_RADIUS, 1]} scale={6 * pixel}>
+      <primitive object={trail.object} />
+      <mesh ref={mesh} position={[0, LAUNCH_RADIUS, 1]} scale={5 * pixel}>
         <circleGeometry args={[1, 24]} />
-        <meshBasicMaterial color="#f3efe6" />
+        <meshBasicMaterial color={SATELLITE_GLOW} toneMapped={false} />
       </mesh>
     </>
   );
 }
 
 /** Añade un punto a la estela; cuando se llena, desplaza y descarta el más antiguo. */
-function pushTrail(line: ThreeLine, count: { current: number }, x: number, y: number) {
-  const attribute = line.geometry.getAttribute("position") as BufferAttribute;
-  const array = attribute.array as Float32Array;
+function pushPoint(xy: Float32Array, count: { current: number }, x: number, y: number) {
   if (count.current < TRAIL_POINTS) {
     count.current += 1;
   } else {
-    array.copyWithin(0, 3);
+    xy.copyWithin(0, 2);
   }
-  const o = (count.current - 1) * 3;
-  array[o] = x;
-  array[o + 1] = y;
-  array[o + 2] = 0.5;
-  attribute.needsUpdate = true;
-  line.geometry.setDrawRange(0, count.current);
+  xy[(count.current - 1) * 2] = x;
+  xy[(count.current - 1) * 2 + 1] = y;
 }
 
 /**
