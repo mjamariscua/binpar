@@ -1,0 +1,12 @@
+# docker compose up --build  →  http://localhost:3000
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    # Las claves del LLM se leen de .env si existe (copia .env.example).
+    # Sin .env la app arranca igual, en modo sin tutor.
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
