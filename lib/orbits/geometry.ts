@@ -65,6 +65,52 @@ export function bodyPath(trajectory: Trajectory, body: number, minDistance = 0):
   return points;
 }
 
+/**
+ * Simplificación de Ramer–Douglas–Peucker: elimina los puntos que se desvían
+ * menos de `tolerance` de la recta entre sus vecinos conservados. A diferencia
+ * de diezmar por distancia, gasta puntos donde la curva gira y casi ninguno
+ * en los tramos suaves: una circunferencia queda en unas decenas de puntos
+ * con error inferior a un píxel. Iterativa (pila) para no depender de la
+ * profundidad de recursión.
+ */
+export function simplifyPath(points: readonly number[], tolerance: number): number[] {
+  const n = points.length / 2;
+  if (n <= 2) return [...points];
+  const keep = new Uint8Array(n);
+  keep[0] = 1;
+  keep[n - 1] = 1;
+  const stack: [number, number][] = [[0, n - 1]];
+  const tol2 = tolerance * tolerance;
+  while (stack.length > 0) {
+    const [first, last] = stack.pop()!;
+    const ax = points[first * 2];
+    const ay = points[first * 2 + 1];
+    const dx = points[last * 2] - ax;
+    const dy = points[last * 2 + 1] - ay;
+    const len2 = dx * dx + dy * dy;
+    let worst = -1;
+    let worstD2 = tol2;
+    for (let i = first + 1; i < last; i++) {
+      const px = points[i * 2] - ax;
+      const py = points[i * 2 + 1] - ay;
+      // Distancia² al segmento (o al punto, si el segmento es degenerado: inicio = fin en un lazo cerrado).
+      const t = len2 > 0 ? Math.max(0, Math.min(1, (px * dx + py * dy) / len2)) : 0;
+      const d2 = (px - t * dx) ** 2 + (py - t * dy) ** 2;
+      if (d2 > worstD2) {
+        worstD2 = d2;
+        worst = i;
+      }
+    }
+    if (worst > 0) {
+      keep[worst] = 1;
+      stack.push([first, worst], [worst, last]);
+    }
+  }
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) if (keep[i]) out.push(points[i * 2], points[i * 2 + 1]);
+  return out;
+}
+
 /** Atributo `d` de un <path> SVG. El eje y del SVG apunta hacia abajo, así que se invierte. */
 export function svgPathData(points: readonly number[], decimals = 3): string {
   const parts: string[] = [];

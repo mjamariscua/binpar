@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { packState } from "@/lib/physics/nbody";
 import { precomputePeriod } from "@/lib/physics/trajectory";
-import { bodyPath, orbitBounds, padBounds, svgPathData, svgViewBox } from "./geometry";
+import { bodyPath, orbitBounds, padBounds, simplifyPath, svgPathData, svgViewBox } from "./geometry";
 
 // Binaria circular: los dos cuerpos recorren la circunferencia unidad.
 const circular = precomputePeriod(
@@ -51,6 +51,35 @@ describe("bodyPath", () => {
     const [x0, y0] = path;
     const last = path.slice(-2);
     expect(Math.hypot(last[0] - x0, last[1] - y0)).toBeLessThan(1e-9);
+  });
+});
+
+describe("simplifyPath (Ramer–Douglas–Peucker)", () => {
+  it("una recta se queda en sus dos extremos; una esquina se conserva", () => {
+    expect(simplifyPath([0, 0, 1, 0.0001, 2, 0, 3, 0], 0.01)).toEqual([0, 0, 3, 0]);
+    expect(simplifyPath([0, 0, 1, 0, 1, 1], 0.01)).toEqual([0, 0, 1, 0, 1, 1]);
+  });
+
+  it("ningún punto descartado queda más lejos que la tolerancia del trazo simplificado", () => {
+    const circle = bodyPath(circular, 1);
+    const tol = 0.003;
+    const simple = simplifyPath(circle, tol);
+    expect(simple.length).toBeLessThan(circle.length / 4);
+    // Para cada punto original, distancia mínima a los segmentos simplificados.
+    const distToPolyline = (x: number, y: number) => {
+      let best = Infinity;
+      for (let i = 0; i + 3 < simple.length; i += 2) {
+        const [ax, ay, bx, by] = [simple[i], simple[i + 1], simple[i + 2], simple[i + 3]];
+        const dx = bx - ax;
+        const dy = by - ay;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+        best = Math.min(best, Math.hypot(x - ax - t * dx, y - ay - t * dy));
+      }
+      return best;
+    };
+    for (let i = 0; i < circle.length; i += 2) {
+      expect(distToPolyline(circle[i], circle[i + 1])).toBeLessThanOrEqual(tol + 1e-12);
+    }
   });
 });
 

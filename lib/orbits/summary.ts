@@ -12,7 +12,7 @@ import {
 } from "@/lib/physics/trajectory";
 import type { OrbitSlug, PeriodicOrbit } from "./catalog";
 import { initialStateOf } from "./catalog";
-import { bodyPath, orbitBounds, padBounds, svgPathData, svgViewBox } from "./geometry";
+import { bodyPath, orbitBounds, padBounds, simplifyPath, svgPathData, svgViewBox } from "./geometry";
 
 /**
  * Lo que las páginas necesitan saber de cada órbita sin animarla: magnitudes
@@ -41,8 +41,13 @@ export interface OrbitSummary {
 
 /** Margen alrededor del recorrido en el dibujo estático, como fracción del lado mayor. */
 const SVG_PADDING = 0.06;
-/** Distancia mínima entre puntos del SVG, como fracción del lado mayor (≈ 1 px a 250 px). */
-const SVG_MIN_SEGMENT = 0.004;
+/**
+ * Tolerancia de simplificación del SVG, como fracción del lado mayor: ≈ 0.9 px
+ * en el póster del detalle (600 px) y menos en las miniaturas. Reduce los
+ * trazos de ~176 KB a una fracción, que importa porque la galería los envía
+ * dos veces (en el HTML y en el payload RSC).
+ */
+const SVG_TOLERANCE = 0.0015;
 
 const cache = new Map<OrbitSlug, OrbitSummary>();
 
@@ -61,7 +66,7 @@ export function summarizeOrbit(orbit: PeriodicOrbit): OrbitSummary {
 
   const bounds = orbitBounds(traj);
   const side = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
-  const path = (body: number) => svgPathData(bodyPath(traj, body, side * SVG_MIN_SEGMENT));
+  const path = (body: number) => svgPathData(simplifyPath(bodyPath(traj, body), side * SVG_TOLERANCE));
 
   const summary: OrbitSummary = {
     energy,
