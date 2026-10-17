@@ -1,0 +1,85 @@
+"use client";
+
+import { lazy, Suspense, useSyncExternalStore, type ReactNode } from "react";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { Button } from "@/components/ui/button";
+import type { OrbitSlug } from "@/lib/orbits/catalog";
+import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
+import { PlaybackControls } from "./playback-controls";
+
+// three.js y la escena se descargan solo al abrir un detalle.
+const OrbitScene = lazy(() => import("./orbit-scene"));
+
+const noopSubscribe = () => () => {};
+
+/**
+ * true en el navegador y false al renderizar en el servidor. La escena no
+ * puede renderizarse en el servidor: necesita Worker y WebGL.
+ */
+function useIsClient(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+}
+
+/**
+ * Simulación con sus controles. El póster SVG (generado en el servidor) se ve
+ * al instante y queda debajo; el canvas, opaco, lo tapa cuando ya hay algo que
+ * animar. Si la simulación falla, el póster sigue mostrando el recorrido.
+ */
+export function OrbitPlayer({
+  slug,
+  name,
+  period,
+  poster,
+}: {
+  slug: OrbitSlug;
+  name: string;
+  period: number;
+  poster: ReactNode;
+}) {
+  const isClient = useIsClient();
+
+  return (
+    <section aria-label={`Simulación de ${name}`} className="flex flex-col gap-5">
+      <div
+        className="relative aspect-square w-full overflow-hidden rounded-xl border border-border sm:aspect-[4/3]"
+        style={{ background: SCENE_BACKGROUND }}
+      >
+        <div className="absolute inset-0">{poster}</div>
+        {isClient && (
+          <ErrorBoundary
+            fallback={(retry) => (
+              <StatusOverlay>
+                <span>No se pudo iniciar la simulación. Se muestra el recorrido estático.</span>
+                <Button variant="outline" size="sm" onClick={retry}>
+                  Reintentar
+                </Button>
+              </StatusOverlay>
+            )}
+          >
+            <Suspense fallback={<StatusOverlay>Calculando la órbita…</StatusOverlay>}>
+              <div className="absolute inset-0">
+                <OrbitScene slug={slug} />
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        )}
+      </div>
+      <PlaybackControls slug={slug} period={period} />
+    </section>
+  );
+}
+
+function StatusOverlay({ children }: { children: ReactNode }) {
+  return (
+    <div
+      role="status"
+      className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-center gap-3 bg-background/70 px-4 py-3 text-sm text-muted-foreground backdrop-blur-sm"
+    >
+      {children}
+    </div>
+  );
+}

@@ -1,5 +1,6 @@
-// Página provisional del módulo 1: confirma que el despliegue funciona.
-// La experiencia de la Parte A la sustituye en el módulo 3.
+import Link from "next/link";
+
+// Página provisional: la experiencia de la Parte A la sustituye en el módulo 3.
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-6 px-6 py-24">
@@ -9,6 +10,12 @@ export default function Home() {
         La ley de gravitación universal de Newton, explicada con simulaciones que puedes tocar, y
         una galería de órbitas periódicas del problema de los tres cuerpos.
       </p>
+      <Link
+        href="/tres-cuerpos"
+        className="w-fit rounded-sm text-lg underline underline-offset-4 hover:text-muted-foreground"
+      >
+        Ver la galería de tres cuerpos →
+      </Link>
     </main>
   );
 }
