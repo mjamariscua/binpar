@@ -50,3 +50,6 @@ next-env.d.ts
 
 # guías de estudio personales (recorrido por módulo): no se publican
 /recorrido/
+
+# generado por `next dev` (indicaciones para agentes de IA), no es contenido del proyecto
+/AGENTS.md
