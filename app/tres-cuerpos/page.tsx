@@ -23,7 +23,7 @@ export default function ThreeBodyGalleryPage() {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+    <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <h1 className="font-heading text-5xl sm:text-7xl">Tres cuerpos</h1>
       <p className="mt-4 max-w-prose text-lg text-muted-foreground">
         Tres cuerpos que se atraen entre sí no tienen una fórmula que prediga su movimiento para

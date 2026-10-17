@@ -23,12 +23,14 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://binpar.vercel.app"),
   title: {
     default: "Caída · La gravitación universal",
     template: "%s · Caída",
   },
   description:
     "La ley de gravitación universal de Newton explicada con simulaciones interactivas, y una galería de soluciones periódicas del problema de los tres cuerpos.",
+  openGraph: { type: "website", locale: "es_ES", siteName: "Caída" },
 };
 
 // El sitio es solo oscuro (concepto visual «Caída»): se fija la clase `dark` en
@@ -40,6 +42,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`dark ${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Primer elemento enfocable: salta la navegación y va al contenido. */}
+        <a
+          href="#contenido"
+          className="sr-only z-50 rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        >
+          Saltar al contenido
+        </a>
         <SiteHeader />
         {children}
       </body>

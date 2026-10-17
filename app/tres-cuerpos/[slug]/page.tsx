@@ -29,7 +29,7 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
   const next = ORBITS[(index + 1) % ORBITS.length];
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Órbitas" className="flex flex-wrap items-center justify-between gap-3 text-sm">
         {/* scroll={false}: la galería restaura su propio scroll al volver. */}
         <Link href="/tres-cuerpos" scroll={false} className="rounded-sm text-muted-foreground hover:text-foreground">

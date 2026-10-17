@@ -85,6 +85,8 @@ export function TutorChat({ answers, provider, model }: { answers: DiagnosticAns
         ref={listRef}
         role="log"
         aria-live="polite"
+        // Mientras llega el streaming, los lectores de pantalla esperan al texto completo.
+        aria-busy={busy}
         aria-label="Conversación con el tutor"
         className="flex h-[28rem] flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-4"
       >

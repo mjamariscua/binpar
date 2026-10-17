@@ -21,7 +21,7 @@ const CHAPTERS = [
  */
 export default function GravityPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl overflow-x-clip px-4 sm:px-6">
+    <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl overflow-x-clip px-4 sm:px-6">
       <header className="relative flex min-h-[85vh] flex-col justify-center py-16">
         <HeroOrbits />
         <p className="relative font-mono text-sm tracking-widest text-primary uppercase">Ley de gravitación universal</p>

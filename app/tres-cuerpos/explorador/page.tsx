@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ExplorerPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <Link href="/tres-cuerpos" scroll={false} className="rounded-sm text-sm text-muted-foreground hover:text-foreground">
         ← Galería
       </Link>
