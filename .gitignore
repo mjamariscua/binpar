@@ -43,3 +43,6 @@ next-env.d.ts
 
 # enunciado de BinPar: documento de terceros, no se publica en el repo
 /docs/prueba.pdf
+
+# instrucciones locales para el asistente de IA: no se publican
+/CLAUDE.md
