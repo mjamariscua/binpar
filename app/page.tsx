@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppleMoon } from "@/components/gravity/apple-moon";
 import { Chapter, Prose } from "@/components/gravity/chapter";
+import { HeroOrbits } from "@/components/gravity/hero-orbits";
 import { LiveFormula } from "@/components/gravity/live-formula";
 import { OrbitSandbox } from "@/components/gravity/orbit-sandbox";
 import { Tex } from "@/components/gravity/tex";
@@ -20,22 +21,25 @@ const CHAPTERS = [
  */
 export default function GravityPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-      <header className="flex min-h-[80vh] flex-col justify-center py-16">
-        <p className="font-mono text-sm tracking-widest text-primary uppercase">Ley de gravitación universal</p>
-        <h1 className="mt-4 font-heading text-[clamp(5rem,18vw,13rem)] leading-[0.85] italic">Caída</h1>
-        <p className="mt-8 max-w-2xl text-xl leading-relaxed text-foreground/90 sm:text-2xl">
+    <main className="mx-auto w-full max-w-6xl overflow-x-clip px-4 sm:px-6">
+      <header className="relative flex min-h-[85vh] flex-col justify-center py-16">
+        <HeroOrbits />
+        <p className="relative font-mono text-sm tracking-widest text-primary uppercase">Ley de gravitación universal</p>
+        <h1 className="relative mt-4 font-heading text-[clamp(5rem,18vw,13rem)] leading-[0.85] italic drop-shadow-[0_0_40px_rgb(245_184_61/0.25)]">
+          Caída
+        </h1>
+        <p className="relative mt-8 max-w-2xl text-xl leading-relaxed text-foreground/90 sm:text-2xl">
           Cuenta la historia que una manzana hizo pensar a Isaac Newton: si la manzana cae, ¿por qué no cae la Luna?
           La respuesta cabe en una línea y explica desde las mareas hasta las órbitas de los planetas. Vamos a
           descubrirla tocándola.
         </p>
-        <nav aria-label="Capítulos" className="mt-12">
+        <nav aria-label="Capítulos" className="relative mt-12">
           <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {CHAPTERS.map((c, i) => (
               <li key={c.id}>
                 <a
                   href={`#${c.id}`}
-                  className="flex h-full items-baseline gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:border-primary/60"
+                  className="flex h-full items-baseline gap-3 rounded-lg border border-border bg-background/70 px-4 py-3 backdrop-blur-sm transition-colors hover:border-primary/60"
                 >
                   <span className="font-mono text-sm text-primary">{i + 1}</span>
                   <span>{c.title}</span>
