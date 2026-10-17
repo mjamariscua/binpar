@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { OrbitGallery, type GalleryItem } from "@/components/three-body/orbit-gallery";
 import { ORBITS } from "@/lib/orbits/catalog";
 import { summarizeOrbit } from "@/lib/orbits/summary";
@@ -30,6 +31,20 @@ export default function ThreeBodyGalleryPage() {
         misma coreografía una y otra vez. Estas son seis.
       </p>
       <OrbitGallery items={items} />
+      <aside className="mt-16 flex flex-col gap-4 rounded-2xl border border-primary/40 bg-primary/5 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-heading text-3xl">¿Y si buscas tú una?</p>
+          <p className="mt-1 text-muted-foreground">
+            Ajusta la velocidad inicial y mide si el sistema vuelve a como empezó.
+          </p>
+        </div>
+        <Link
+          href="/tres-cuerpos/explorador"
+          className="shrink-0 rounded-lg border border-primary/60 px-5 py-3 text-primary transition-colors hover:bg-primary/10"
+        >
+          Abrir el explorador →
+        </Link>
+      </aside>
     </main>
   );
 }
