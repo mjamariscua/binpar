@@ -37,7 +37,8 @@ Ninguna es obligatoria. Copia `.env.example` a `.env.local` (desarrollo) o a
 |---|---|
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY` | Clave del proveedor del tutor. Basta una. |
 | `LLM_PROVIDER` | Opcional: `anthropic`, `openai` o `google` si hay varias claves. |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Opcional: límite de peticiones al tutor. |
+| `LLM_MODEL` | Opcional: otro modelo del proveedor (por defecto `claude-haiku-5-5`, `gpt-5.4-mini` o `gemini-3.5-flash`). |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Opcional: límite de peticiones al tutor compartido entre instancias. Sin ellas, el límite vive en memoria de cada proceso. |
 
 Sin clave, la app funciona en modo reducido con explicaciones estáticas y un
 aviso visible.
