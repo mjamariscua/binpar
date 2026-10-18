@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type Ref } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type Ref } from "react";
 import { Prose } from "@/components/gravity/chapter";
 import { DIAGNOSTIC, profileFrom, type DiagnosticAnswers } from "@/lib/tutor/diagnostic";
 import { DiagnosticQuiz } from "./diagnostic-quiz";
 import { GuidedExperiments } from "./guided-experiments";
 import { LabTabs } from "./lab-tabs";
-import { TutorChat } from "./tutor-chat";
+
+// El chat arrastra el SDK de IA: solo se descarga si hay clave y se va a usar.
+const TutorChat = lazy(() => import("./tutor-chat").then((m) => ({ default: m.TutorChat })));
 
 type TutorStatus =
   | { readonly available: true; readonly provider: string; readonly model: string }
@@ -61,7 +63,9 @@ export function TutorSection() {
             <>
               <DiagnosticSummary answers={answers} summaryRef={summaryRef} />
               {status?.available ? (
-                <TutorChat answers={answers} provider={status.provider} model={status.model} />
+                <Suspense fallback={<p className="text-muted-foreground">Cargando el tutor…</p>}>
+                  <TutorChat answers={answers} provider={status.provider} model={status.model} />
+                </Suspense>
               ) : (
                 <GuidedExperiments answers={answers} />
               )}
