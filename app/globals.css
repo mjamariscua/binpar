@@ -21,7 +21,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
+  --color-success: var(--success);
   --color-ring: var(--ring);
   --color-glow-amber: var(--glow-amber);
   --color-glow-cyan: var(--glow-cyan);
@@ -34,6 +36,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 4%), 0 8px 24px rgb(0 0 0 / 40%);
+  --shadow-glow: 0 0 40px rgb(245 184 61 / 25%);
 }
 
 /*
@@ -41,6 +45,15 @@
  * (el cielo de noche), texto blanco cálido y el ámbar como acento: es el
  * color del primer cuerpo de las simulaciones y el de la marca de BinPar.
  * Contrastes sobre el fondo: texto 17:1, texto secundario 8:1, ámbar 11:1.
+ *
+ * Bordes: --border (blanco al 10 %, 1,3:1) solo para separadores y tarjetas
+ * decorativas; --border-strong (3,2:1) para el límite de los controles, que
+ * WCAG 1.4.11 pide distinguible. El estado seleccionado usa el ámbar.
+ *
+ * Escala tipográfica (utilidades de Tailwind): 12 px solo en etiquetas de
+ * dibujos; 14 px (text-sm) para metadatos; 16 px (text-base) para
+ * instrucciones, resultados e interfaz; 18 px (text-lg) para la prosa; y la
+ * serif de 36 a 208 px para títulos.
  */
 :root {
   --background: #0a0b10;
@@ -58,7 +71,9 @@
   --accent: #1a1d26;
   --accent-foreground: #f3efe6;
   --destructive: #f2708a;
+  --success: #6ee7b7;
   --border: rgb(255 255 255 / 10%);
+  --border-strong: #5c6172;
   --input: rgb(255 255 255 / 15%);
   --ring: #f5b83d;
   --glow-amber: #f5b83d;

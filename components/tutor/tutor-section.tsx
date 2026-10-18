@@ -138,7 +138,7 @@ function DiagnosticSummary({
           const option = q.options[answers[i]];
           return (
             <li key={q.id}>
-              <span className={option.correct ? "text-emerald-300" : "text-primary"}>{option.correct ? "✓" : "✗"}</span>{" "}
+              <span className={option.correct ? "text-success" : "text-primary"}>{option.correct ? "✓" : "✗"}</span>{" "}
               {option.feedback}
             </li>
           );

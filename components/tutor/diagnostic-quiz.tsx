@@ -64,9 +64,9 @@ export function DiagnosticQuiz({ onDone }: { onDone: (answers: DiagnosticAnswers
           <label
             key={option.text}
             className={cn(
-              "flex cursor-pointer items-center gap-3 rounded-lg border border-border px-4 py-3 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-ring",
+              "flex cursor-pointer items-center gap-3 rounded-lg border border-border-strong px-4 py-3 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-ring",
               selected === i && "border-primary/70 bg-primary/10",
-              checked && option.correct && "border-emerald-400/70",
+              checked && option.correct && "border-success",
               checked && "cursor-default",
             )}
           >
@@ -80,7 +80,7 @@ export function DiagnosticQuiz({ onDone }: { onDone: (answers: DiagnosticAnswers
               className="accent-primary"
             />
             <span>{option.text}</span>
-            {checked && option.correct && <span className="ml-auto text-sm text-emerald-300">Correcta</span>}
+            {checked && option.correct && <span className="ml-auto text-sm text-success">Correcta</span>}
           </label>
         ))}
       </fieldset>

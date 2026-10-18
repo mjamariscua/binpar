@@ -181,7 +181,7 @@ function VelocityControl({ label, value, onChange }: { label: string; value: num
               setInvalid(false);
             }
           }}
-          className="w-32 rounded-md border border-input bg-transparent px-2 py-1 text-right font-mono text-base tabular-nums aria-invalid:border-destructive sm:text-sm pointer-coarse:min-h-11"
+          className="w-32 rounded-md border border-border-strong bg-transparent px-2 py-1 text-right font-mono text-base tabular-nums aria-invalid:border-destructive sm:text-sm pointer-coarse:min-h-11"
         />
       </div>
       <p id={hintId} className={cn("text-sm", invalid ? "text-destructive" : "sr-only")}>
@@ -234,7 +234,7 @@ function ReturnMeter({ search }: { search: SearchView | null }) {
   const { bestDistance, bestTime, outcome } = search;
   const exponent = bestDistance > 0 ? -Math.log10(bestDistance) : 6;
   const fill = Math.min(1, Math.max(0, exponent / 6));
-  const tone = bestDistance < 1e-3 ? "bg-emerald-400" : bestDistance < 1e-1 ? "bg-primary" : "bg-destructive";
+  const tone = bestDistance < 1e-3 ? "bg-success" : bestDistance < 1e-1 ? "bg-primary" : "bg-destructive";
   const verdict =
     outcome === "colision"
       ? "Dos cuerpos chocan: no hay órbita periódica aquí."
@@ -265,7 +265,7 @@ function ReturnMeter({ search }: { search: SearchView | null }) {
         aria-valuemax={6}
         aria-valuenow={Number(exponent.toFixed(2))}
         aria-valuetext={outcome === "ok" ? `distancia ${formatScientific(bestDistance)}` : verdict}
-        className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+        className="mt-3 h-2 overflow-hidden rounded-full bg-border-strong"
       >
         <div className={cn("h-full rounded-full transition-[width] duration-300", tone)} style={{ width: `${fill * 100}%` }} />
       </div>
