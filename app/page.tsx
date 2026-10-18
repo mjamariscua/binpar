@@ -133,7 +133,7 @@ export default function GravityPage() {
       </Chapter>
 
       <footer className="border-t border-border/60 py-20">
-        <p className="font-heading text-4xl sm:text-5xl">¿Y si son tres?</p>
+        <h2 className="font-heading text-4xl sm:text-5xl">¿Y si son tres?</h2>
         <p className="mt-4 max-w-prose text-lg text-muted-foreground">
           Con dos cuerpos, la ley da una solución exacta. Con tres, no existe ninguna fórmula general; solo
           coreografías concretas que se repiten.

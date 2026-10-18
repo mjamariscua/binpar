@@ -7,6 +7,9 @@ import { OrbitPlayer } from "@/components/three-body/orbit-player";
 import { FAMILY_LABELS, ORBITS, SHAPE_SPHERE_NOTE, getOrbit } from "@/lib/orbits/catalog";
 import { summarizeOrbit } from "@/lib/orbits/summary";
 
+/** Enlaces de navegación entre órbitas: 44 px de alto en pantallas táctiles. */
+const NAV_LINK = "inline-flex items-center rounded-sm text-muted-foreground hover:text-foreground pointer-coarse:min-h-11";
+
 // Las seis rutas se generan al compilar; cualquier otro slug es un 404.
 export const dynamicParams = false;
 
@@ -32,14 +35,14 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
     <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Órbitas" className="flex flex-wrap items-center justify-between gap-3 text-sm">
         {/* scroll={false}: la galería restaura su propio scroll al volver. */}
-        <Link href="/tres-cuerpos" scroll={false} className="rounded-sm text-muted-foreground hover:text-foreground">
+        <Link href="/tres-cuerpos" scroll={false} className={NAV_LINK}>
           ← Galería
         </Link>
         <div className="flex gap-4">
-          <Link href={`/tres-cuerpos/${previous.slug}`} className="rounded-sm text-muted-foreground hover:text-foreground">
+          <Link href={`/tres-cuerpos/${previous.slug}`} className={NAV_LINK}>
             <span className="sr-only">Anterior: </span>‹ {previous.name}
           </Link>
-          <Link href={`/tres-cuerpos/${next.slug}`} className="rounded-sm text-muted-foreground hover:text-foreground">
+          <Link href={`/tres-cuerpos/${next.slug}`} className={NAV_LINK}>
             <span className="sr-only">Siguiente: </span>
             {next.name} ›
           </Link>

@@ -10,7 +10,11 @@ export const metadata: Metadata = {
 export default function ExplorerPage() {
   return (
     <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <Link href="/tres-cuerpos" scroll={false} className="rounded-sm text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/tres-cuerpos"
+        scroll={false}
+        className="inline-flex items-center rounded-sm text-sm text-muted-foreground hover:text-foreground pointer-coarse:min-h-11"
+      >
         ← Galería
       </Link>
       <h1 className="mt-6 font-heading text-5xl sm:text-7xl">Busca tu órbita</h1>
