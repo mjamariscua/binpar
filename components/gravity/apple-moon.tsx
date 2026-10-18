@@ -3,6 +3,7 @@
 import { Hand } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { LiveSummary } from "@/components/ui/live-summary";
 import { Hint } from "./hint";
 import {
   EARTH_RADIUS_KM,
@@ -118,6 +119,9 @@ export function AppleMoon() {
 
   return (
     <div className="flex flex-col gap-6">
+      <LiveSummary
+        text={`A ${distance.toFixed(1)} radios terrestres, la Luna cae ${formatLength(fall)} en el primer segundo: ${formatInteger(Math.round(ratio))} veces menos que la manzana.`}
+      />
       <Hint icon={Hand}>
         Arrastra la Luna para acercarla o alejarla, o enfócala con el tabulador y usa las flechas. Mira cuánto cae en un
         segundo a cada distancia.

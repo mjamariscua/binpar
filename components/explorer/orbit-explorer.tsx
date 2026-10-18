@@ -3,6 +3,7 @@
 import { Crosshair, Sparkles } from "lucide-react";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { LiveSummary } from "@/components/ui/live-summary";
 import { Slider } from "@/components/ui/slider";
 import { PRESETS, T_MAX_LIMITS, VELOCITY_LIMITS } from "@/lib/explorer/explorer";
 import type { SearchView } from "@/lib/explorer/messages";
@@ -46,8 +47,9 @@ export function OrbitExplorer() {
           style={{ background: SCENE_BACKGROUND }}
         >
           {search && <Trajectory search={search} untilReturn={untilReturn} />}
+          {/* Solo visual: con el debounce aparece y desaparece a menudo; lo que se anuncia es el veredicto. */}
           {busy.search && (
-            <p role="status" className="absolute top-3 left-3 rounded-md bg-background/70 px-2 py-1 text-xs text-muted-foreground">
+            <p aria-hidden className="absolute top-3 left-3 rounded-md bg-background/70 px-2 py-1 text-sm text-muted-foreground">
               Calculando…
             </p>
           )}
@@ -77,27 +79,30 @@ export function OrbitExplorer() {
             Busca unos (vx, vy) cercanos que vuelvan mejor, cerca del mismo instante de retorno (método de Nelder–Mead,
             unas 80 órbitas integradas).
           </p>
-          {refined && (
-            <div role="status" className="border-t border-border pt-3 text-sm">
-              <p>
-                De <Num>{formatScientific(refined.before)}</Num> a <Num>{formatScientific(refined.after)}</Num> en{" "}
-                {refined.evaluations} órbitas: vx = <Num>{refined.vx.toFixed(7)}</Num>, vy ={" "}
-                <Num>{refined.vy.toFixed(7)}</Num>, T ≈ <Num>{refined.period.toFixed(4)}</Num>.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => {
-                  setVx(refined.vx);
-                  setVy(refined.vy);
-                  clearRefined();
-                }}
-              >
-                <Sparkles /> Usar estos valores
-              </Button>
-            </div>
-          )}
+          {/* Región viva estable: el resultado aparece dentro y así se anuncia. */}
+          <div aria-live="polite">
+            {refined && (
+              <div className="border-t border-border pt-3 text-sm">
+                <p>
+                  De <Num>{formatScientific(refined.before)}</Num> a <Num>{formatScientific(refined.after)}</Num> en{" "}
+                  {refined.evaluations} órbitas: vx = <Num>{refined.vx.toFixed(7)}</Num>, vy ={" "}
+                  <Num>{refined.vy.toFixed(7)}</Num>, T ≈ <Num>{refined.period.toFixed(4)}</Num>.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    setVx(refined.vx);
+                    setVy(refined.vy);
+                    clearRefined();
+                  }}
+                >
+                  <Sparkles /> Usar estos valores
+                </Button>
+              </div>
+            )}
+          </div>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         </div>
 
@@ -199,6 +204,9 @@ function ReturnMeter({ search }: { search: SearchView | null }) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
+      <LiveSummary
+        text={outcome === "ok" && Number.isFinite(bestDistance) ? `Distancia de retorno ${formatScientific(bestDistance)}. ${verdict}` : verdict}
+      />
       <p className="text-sm text-muted-foreground">Proximidad de retorno</p>
       <p className="mt-1 font-mono text-2xl tabular-nums">
         {outcome === "ok" && Number.isFinite(bestDistance) ? formatScientific(bestDistance) : "—"}

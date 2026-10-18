@@ -4,6 +4,7 @@ import { Hand, Rocket } from "lucide-react";
 import { lazy, Suspense, useId } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
+import { LiveSummary } from "@/components/ui/live-summary";
 import { Slider } from "@/components/ui/slider";
 import {
   ANGLE_LIMITS_DEG,
@@ -20,6 +21,7 @@ import {
   type ScenarioName,
 } from "@/lib/gravity/sandbox";
 import { formatInteger } from "@/lib/format";
+import { useInViewport } from "@/lib/hooks/use-in-viewport";
 import { useNearViewport } from "@/lib/hooks/use-near-viewport";
 import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import { useLabStore, type FlightStatus } from "@/lib/store/lab-store";
@@ -44,9 +46,12 @@ const FLIGHT_LABELS: Record<FlightStatus, string> = {
  */
 export function OrbitSandbox({ compact = false }: { compact?: boolean }) {
   const [ref, near] = useNearViewport<HTMLDivElement>();
+  // El sandbox está dos veces en la página (capítulo 3 y laboratorio): solo
+  // anuncia cambios la instancia que se ve.
+  const [visibleRef, visible] = useInViewport<HTMLDivElement>();
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={visibleRef} className="flex flex-col gap-6">
       <Hint icon={Hand}>
         Elige un lanzamiento de ejemplo, o ajusta velocidad y ángulo y pulsa «Lanzar». También puedes arrastrar desde
         el satélite para apuntar y soltar para lanzar.
@@ -71,19 +76,26 @@ export function OrbitSandbox({ compact = false }: { compact?: boolean }) {
               </Suspense>
             </ErrorBoundary>
           )}
-          <FlightBadge />
+          <FlightBadge announce={visible} />
         </div>
-        <SandboxControls />
+        <SandboxControls announce={visible} />
       </div>
     </div>
   );
 }
 
-function FlightBadge() {
+/**
+ * Estado del vuelo sobre la escena. Solo el estado (listo, en vuelo,
+ * estrellado, escapado) es una región viva: la altura y la velocidad cambian
+ * unas 10 veces por segundo y saturarían el lector de pantalla.
+ */
+function FlightBadge({ announce }: { announce: boolean }) {
   const flight = useLabStore((s) => s.flight);
   return (
-    <p role="status" className="absolute top-3 left-3 rounded-md bg-background/70 px-2.5 py-1.5 text-xs backdrop-blur-sm">
-      <span className={flight.status === "choque" ? "text-destructive" : undefined}>{FLIGHT_LABELS[flight.status]}</span>
+    <p className="absolute top-3 left-3 rounded-md bg-background/70 px-2.5 py-1.5 text-sm backdrop-blur-sm">
+      <span role={announce ? "status" : undefined} className={flight.status === "choque" ? "text-destructive" : undefined}>
+        {FLIGHT_LABELS[flight.status]}
+      </span>
       {flight.status === "en-vuelo" && (
         <span className="ml-2 font-mono text-muted-foreground tabular-nums">
           {formatInteger(flight.altitudeKm)} km · {flight.speedKms.toFixed(2)} km/s
@@ -93,7 +105,7 @@ function FlightBadge() {
   );
 }
 
-function SandboxControls() {
+function SandboxControls({ announce }: { announce: boolean }) {
   const speedKms = useLabStore((s) => s.speedKms);
   const angleDeg = useLabStore((s) => s.angleDeg);
   const setLaunchParams = useLabStore((s) => s.setLaunchParams);
@@ -153,7 +165,8 @@ function SandboxControls() {
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4 text-base" aria-live="polite">
+      <LiveSummary text={`Si lanzas así: ${ORBIT_KIND_LABELS[orbit.kind]}.`} enabled={announce} />
+      <div className="rounded-xl border border-border bg-card p-4 text-base">
         <p className="text-muted-foreground">Si lanzas así:</p>
         <p className="mt-1 text-lg">{ORBIT_KIND_LABELS[orbit.kind]}</p>
         <p className="mt-2 text-muted-foreground">

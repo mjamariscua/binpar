@@ -3,9 +3,11 @@
 import { MoveHorizontal, RotateCcw } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { LiveSummary } from "@/components/ui/live-summary";
 import { EARTH_MOON_FORCE_N } from "@/lib/gravity/earth-moon";
 import { FORMULA_LIMITS, explainChange, forceRatio, type FormulaSymbol } from "@/lib/gravity/formula";
 import { formatScientific } from "@/lib/format";
+import { useInViewport } from "@/lib/hooks/use-in-viewport";
 import { useLabStore } from "@/lib/store/lab-store";
 import { Hint } from "./hint";
 import { ScrubValue } from "./scrub-value";
@@ -32,6 +34,10 @@ export function LiveFormula() {
   const [showG, setShowG] = useState(false);
   const gNoteId = useId();
   const ratio = forceRatio(formula);
+  // La fórmula está dos veces en la página (capítulo 2 y laboratorio): solo
+  // anuncia cambios la instancia que se ve.
+  const [ref, visible] = useInViewport<HTMLDivElement>();
+  const explanation = lastChange ? explainChange(lastChange.symbol, lastChange.before, lastChange.after) : null;
 
   const symbol = (key: FormulaSymbol, glyph: ReactNode) => (
     <ScrubValue
@@ -50,7 +56,7 @@ export function LiveFormula() {
   );
 
   return (
-    <div className="flex flex-col gap-8">
+    <div ref={ref} className="flex flex-col gap-8">
       <Hint icon={MoveHorizontal}>
         Arrastra en horizontal los símbolos subrayados (m₁, m₂ y r), o enfócalos con el tabulador y usa las flechas.
       </Hint>
@@ -92,12 +98,14 @@ export function LiveFormula() {
       <ForceDiagram m1={formula.m1} m2={formula.m2} r={formula.r} ratio={ratio} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p aria-live="polite" className="min-h-14 max-w-prose text-lg">
+        {/* Se anuncia al dejar de arrastrar, no en cada movimiento del puntero. */}
+        <LiveSummary text={explanation ?? ""} enabled={visible} />
+        <p className="min-h-14 max-w-prose text-lg">
           {lastChange ? (
             <>
               {lastChange.by === "tutor" && <span className="text-primary">El tutor: </span>}
               {lastChange.by === "guia" && <span className="text-primary">Experimento: </span>}
-              {explainChange(lastChange.symbol, lastChange.before, lastChange.after)}
+              {explanation}
             </>
           ) : (
             <span className="text-muted-foreground">La fuerza con que se atraen hoy la Tierra y la Luna.</span>
