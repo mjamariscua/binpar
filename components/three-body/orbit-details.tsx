@@ -9,7 +9,7 @@ export function OrbitDetails({ orbit, summary }: { orbit: PeriodicOrbit; summary
   const [first] = orbit.bodies;
 
   return (
-    <aside aria-label="Datos de la órbita" className="flex flex-col gap-8 text-sm">
+    <aside aria-label="Datos de la órbita" className="flex min-w-0 flex-col gap-8 text-sm">
       <Section title="Magnitudes">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
           <Term label="Periodo T" value={formatValue(orbit.period)} />

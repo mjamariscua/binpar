@@ -58,7 +58,12 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
         )}
       </header>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      {/*
+        minmax(0, 1fr) también en móvil: sin columnas explícitas, la pista
+        implícita es `auto` y crece hasta el ancho mínimo de la tabla de
+        condiciones iniciales, que desbordaba la página a 375 px.
+      */}
+      <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <OrbitPlayer
           slug={orbit.slug}
           name={orbit.name}
