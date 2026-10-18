@@ -4,12 +4,13 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Segmented } from "@/components/ui/segmented";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
 import { SPEEDS, isSpeed, type Speed } from "@/lib/orbits/playback";
 import { usePlayback, usePlaybackStore } from "@/lib/store/playback-store";
 
 const SPEED_LABELS: Record<Speed, string> = { 0.25: "¼×", 0.5: "½×", 1: "1×", 2: "2×", 4: "4×" };
+const SPEED_OPTIONS = SPEEDS.map((s) => ({ value: String(s), label: SPEED_LABELS[s], ariaLabel: `${s} veces` }));
 /** El scrub recorre el periodo en 1000 pasos; RePág/AvPág saltan de 10 en 10 (comportamiento de Radix). */
 const SCRUB_STEPS = 1000;
 
@@ -53,23 +54,17 @@ export function PlaybackControls({ slug, period }: { slug: OrbitSlug; period: nu
         <span id={speedLabelId} className="text-sm text-muted-foreground">
           Velocidad
         </span>
-        <ToggleGroup
-          type="single"
-          variant="outline"
+        <Segmented
           size="sm"
           value={String(speed)}
-          onValueChange={(value) => {
+          options={SPEED_OPTIONS}
+          onChange={(value) => {
             const n = Number(value);
             if (isSpeed(n)) setSpeed(slug, n);
           }}
           aria-labelledby={speedLabelId}
-        >
-          {SPEEDS.map((s) => (
-            <ToggleGroupItem key={s} value={String(s)} aria-label={`${s} veces`} className="px-2.5 font-mono">
-              {SPEED_LABELS[s]}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+          itemClassName="px-2.5 font-mono"
+        />
       </div>
     </div>
   );

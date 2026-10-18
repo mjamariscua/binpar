@@ -2,8 +2,8 @@
 
 import { Hand } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { Button } from "@/components/ui/button";
 import { LiveSummary } from "@/components/ui/live-summary";
+import { Segmented } from "@/components/ui/segmented";
 import { Hint } from "./hint";
 import {
   EARTH_RADIUS_KM,
@@ -30,6 +30,7 @@ const PRESETS = [
   { label: "A 30 radios", distance: 30 },
   { label: "A 10 radios", distance: 10 },
 ] as const;
+const PRESET_OPTIONS = PRESETS.map((p) => ({ value: p.label, label: p.label }));
 
 const clamp = (d: number) => Math.min(MAX_DISTANCE, Math.max(MIN_DISTANCE, d));
 
@@ -181,19 +182,17 @@ export function AppleMoon() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap gap-2">
-            {PRESETS.map((p) => (
-              <Button
-                key={p.label}
-                variant="outline"
-                size="sm"
-                aria-pressed={Math.abs(distance - p.distance) < 0.05}
-                onClick={() => setDistance(p.distance)}
-              >
-                {p.label}
-              </Button>
-            ))}
-          </div>
+          <Segmented
+            size="sm"
+            // Ninguna opción marcada si la Luna está a otra distancia.
+            value={PRESETS.find((p) => Math.abs(distance - p.distance) < 0.05)?.label ?? null}
+            options={PRESET_OPTIONS}
+            onChange={(label) => {
+              const preset = PRESETS.find((p) => p.label === label);
+              if (preset) setDistance(preset.distance);
+            }}
+            aria-label="Distancias de ejemplo"
+          />
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-base">
             <dt className="text-muted-foreground">Distancia</dt>

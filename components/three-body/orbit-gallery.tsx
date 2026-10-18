@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, ViewTransition } from "react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Segmented } from "@/components/ui/segmented";
 import { FAMILY_LABELS, type OrbitFamily, type OrbitSlug } from "@/lib/orbits/catalog";
 import type { OrbitSummary } from "@/lib/orbits/summary";
 import { matchesFilter, useGalleryStore, type GalleryFilter } from "@/lib/store/gallery-store";
@@ -23,8 +23,6 @@ const FILTERS: readonly { value: GalleryFilter; label: string }[] = [
   { value: "clasica", label: FAMILY_LABELS.clasica },
   { value: "suvakov-2013", label: FAMILY_LABELS["suvakov-2013"] },
 ];
-
-const isFilter = (value: string): value is GalleryFilter => FILTERS.some((f) => f.value === value);
 
 export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
   const filter = useGalleryStore((s) => s.filter);
@@ -48,20 +46,7 @@ export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
       <h2 id="galeria-titulo" className="sr-only">
         Soluciones
       </h2>
-      <ToggleGroup
-        type="single"
-        variant="outline"
-        value={filter}
-        onValueChange={(value) => isFilter(value) && setFilter(value)}
-        aria-label="Filtrar soluciones"
-        className="flex-wrap"
-      >
-        {FILTERS.map((f) => (
-          <ToggleGroupItem key={f.value} value={f.value} className="px-3">
-            {f.label}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+      <Segmented value={filter} options={FILTERS} onChange={setFilter} aria-label="Filtrar soluciones" />
 
       <p className="sr-only" aria-live="polite">
         {visible.length} {visible.length === 1 ? "solución" : "soluciones"}
