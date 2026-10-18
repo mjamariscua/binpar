@@ -20,6 +20,13 @@ const UNITS: Record<FormulaSymbol, { short: string; long: string }> = {
 
 const fmt = (v: number) => v.toFixed(2);
 
+/** Alternativa al arrastre (WCAG 2.5.7): cada símbolo se puede duplicar o dividir entre 2 con un toque. */
+const STEPPERS: readonly { key: FormulaSymbol; short: string; name: string }[] = [
+  { key: "m1", short: "m₁ · Tierra", name: "masa de la Tierra" },
+  { key: "m2", short: "m₂ · Luna", name: "masa de la Luna" },
+  { key: "r", short: "r · distancia", name: "distancia" },
+];
+
 /**
  * Capítulo 2: F = G·m₁·m₂/r² con m₁, m₂ y r como controles. Debajo, los dos
  * cuerpos y la fuerza que se hacen, con una frase que explica cada cambio.
@@ -58,7 +65,7 @@ export function LiveFormula() {
   return (
     <div ref={ref} className="flex flex-col gap-8">
       <Hint icon={MoveHorizontal}>
-        Arrastra en horizontal los símbolos subrayados (m₁, m₂ y r), o enfócalos con el tabulador y usa las flechas.
+        Arrastra en horizontal los símbolos subrayados (m₁, m₂ y r), o usa los botones ÷2 y ×2 de debajo.
       </Hint>
       <div role="group" aria-label="Fórmula de la gravitación universal: F igual a G por m₁ por m₂ entre r al cuadrado" className="rounded-2xl border border-border bg-card px-4 py-8">
         <div className="flex items-center justify-center gap-3 font-heading text-5xl sm:gap-5 sm:text-7xl">
@@ -93,6 +100,40 @@ export function LiveFormula() {
           Luna o dos galaxias. Es tan pequeña que la atracción entre dos personas es imperceptible. Henry Cavendish
           la midió en 1798 con dos bolas de plomo y una balanza de torsión.
         </p>
+      </div>
+
+      <div role="group" aria-label="Cambiar los símbolos sin arrastrar" className="-mt-4 grid gap-2 sm:grid-cols-3">
+        {STEPPERS.map(({ key, short, name }) => {
+          const value = formula[key];
+          const { min, max } = FORMULA_LIMITS[key];
+          return (
+            <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-1.5">
+              <span className="text-sm text-muted-foreground">{short}</span>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={value <= min}
+                  aria-label={`Dividir la ${name} entre 2`}
+                  onClick={() => setSymbol(key, value / 2)}
+                  className="font-mono"
+                >
+                  ÷2
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={value >= max}
+                  aria-label={`Multiplicar la ${name} por 2`}
+                  onClick={() => setSymbol(key, value * 2)}
+                  className="font-mono"
+                >
+                  ×2
+                </Button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <ForceDiagram m1={formula.m1} m2={formula.m2} r={formula.r} ratio={ratio} />
