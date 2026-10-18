@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MotionToggle } from "@/components/motion-toggle";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
@@ -21,21 +22,24 @@ export function SiteHeader() {
         >
           Caída
         </Link>
-        <Link
-          href="/tres-cuerpos"
-          // La galería restaura su propio scroll (ver OrbitGallery).
-          scroll={false}
-          // «page» en la galería; «true» (sección actual) en el detalle y el explorador.
-          aria-current={pathname === "/tres-cuerpos" ? "page" : inThreeBody ? "true" : undefined}
-          className={cn(
-            "inline-flex min-h-11 items-center rounded-md px-2 text-base transition-colors hover:text-foreground",
-            inThreeBody
-              ? "text-foreground underline decoration-primary decoration-2 underline-offset-8"
-              : "text-muted-foreground",
-          )}
-        >
-          Tres cuerpos
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/tres-cuerpos"
+            // La galería restaura su propio scroll (ver OrbitGallery).
+            scroll={false}
+            // «page» en la galería; «true» (sección actual) en el detalle y el explorador.
+            aria-current={pathname === "/tres-cuerpos" ? "page" : inThreeBody ? "true" : undefined}
+            className={cn(
+              "inline-flex min-h-11 items-center rounded-md px-2 text-base transition-colors hover:text-foreground",
+              inThreeBody
+                ? "text-foreground underline decoration-primary decoration-2 underline-offset-8"
+                : "text-muted-foreground",
+            )}
+          >
+            Tres cuerpos
+          </Link>
+          <MotionToggle />
+        </div>
       </nav>
     </header>
   );

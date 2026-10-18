@@ -13,7 +13,7 @@ import {
   fallDistance,
 } from "@/lib/gravity/earth-moon";
 import { formatInteger } from "@/lib/format";
-import { usePrefersReducedMotion } from "@/lib/hooks/use-reduced-motion";
+import { useAutoplay } from "@/lib/hooks/use-autoplay";
 
 const MIN_DISTANCE = 3;
 const MAX_DISTANCE = 65;
@@ -55,7 +55,7 @@ function placeMoon(group: SVGGElement | null, angle: number, distance: number) {
 export function AppleMoon() {
   const [distance, setDistance] = useState<number>(MOON_DISTANCE_RADII);
   const [dragging, setDragging] = useState(false);
-  const reducedMotion = usePrefersReducedMotion();
+  const autoplay = useAutoplay();
   const svgRef = useRef<SVGSVGElement>(null);
   const moonRef = useRef<SVGGElement>(null);
   const angle = useRef(Math.PI / 5);
@@ -75,7 +75,7 @@ export function AppleMoon() {
   // tiempo acelerado. Se mueve tocando el DOM directamente: sin renders.
   useEffect(() => {
     placeMoon(moonRef.current, angle.current, distance);
-    if (reducedMotion || dragging) return;
+    if (!autoplay || dragging) return;
     let frame = 0;
     let last = performance.now();
     const omega = ((2 * Math.PI) / (circularPeriodDays(distance) * 86400)) * TIME_SCALE;
@@ -87,7 +87,7 @@ export function AppleMoon() {
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [distance, dragging, reducedMotion]);
+  }, [distance, dragging, autoplay]);
 
   const dragTo = (event: PointerEvent) => {
     const svg = svgRef.current;

@@ -8,7 +8,7 @@ import { BODY_COLORS } from "@/lib/orbits/colors";
 import { loadTrajectory } from "@/lib/orbits/load-trajectory";
 import { SECONDS_PER_PERIOD } from "@/lib/orbits/playback";
 import type { OrbitSummary } from "@/lib/orbits/summary";
-import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
+import { useAutoplay } from "@/lib/hooks/use-autoplay";
 import { cn } from "@/lib/utils";
 import { OrbitDrawing } from "./orbit-drawing";
 
@@ -30,13 +30,13 @@ const SEGMENT_OPACITY = [0.12, 0.3, 0.55, 0.95];
  * calculada.
  */
 export function LiveThumbnail({ slug, name, svg }: { slug: OrbitSlug; name: string; svg: OrbitSummary["svg"] }) {
-  const { reducedMotion } = useVisualQuality();
+  const autoplay = useAutoplay();
   const overlay = useRef<SVGSVGElement>(null);
   const [live, setLive] = useState(false);
 
   useEffect(() => {
     const node = overlay.current;
-    if (reducedMotion || !node) return;
+    if (!autoplay || !node) return;
     let frame = 0;
     let visible = false;
     let cancelled = false;
@@ -97,7 +97,7 @@ export function LiveThumbnail({ slug, name, svg }: { slug: OrbitSlug; name: stri
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [slug, reducedMotion]);
+  }, [slug, autoplay]);
 
   const [, , width] = svg.viewBox.split(" ").map(Number);
   const dotRadius = (width ?? 1) * 0.016;

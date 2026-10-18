@@ -148,3 +148,7 @@
     animation: none;
   }
 }
+/* Botón «Pausar animaciones» de la cabecera (components/motion-toggle.tsx). */
+html[data-animations="paused"] .hero-orbit {
+  animation-play-state: paused;
+}

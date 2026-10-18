@@ -25,7 +25,7 @@ export function OrbitExplorer() {
   const [vy, setVy] = useState(0.3961);
   const [tMax, setTMax] = useState(20);
   const [untilReturn, setUntilReturn] = useState(true);
-  const { search, refined, busy, error, send, clearRefined } = useExplorerWorker();
+  const { search, refined, busy, error, send, retry, clearRefined } = useExplorerWorker();
 
   useEffect(() => {
     const timer = setTimeout(() => send({ kind: "search", vx, vy, tMax }), DEBOUNCE_MS);
@@ -61,7 +61,16 @@ export function OrbitExplorer() {
       </div>
 
       <div className="flex flex-col gap-6">
-        <ReturnMeter search={search} />
+        {error && !search ? (
+          <div role="alert" className="flex flex-col items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4">
+            <p>{error}</p>
+            <Button variant="outline" size="sm" onClick={retry}>
+              Reintentar
+            </Button>
+          </div>
+        ) : (
+          <ReturnMeter search={search} />
+        )}
 
         <VelocityControl label="vx (horizontal)" value={vx} onChange={setVx} />
         <VelocityControl label="vy (vertical)" value={vy} onChange={setVy} />
@@ -103,7 +112,7 @@ export function OrbitExplorer() {
               </div>
             )}
           </div>
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {error && search && <p role="alert" className="text-sm text-destructive">{error}</p>}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -229,7 +238,7 @@ function TimeControl({ value, onChange }: { value: number; onChange: (v: number)
  */
 function ReturnMeter({ search }: { search: SearchView | null }) {
   if (!search) {
-    return <div className="h-28 animate-pulse rounded-xl border border-border bg-card" aria-hidden />;
+    return <div className="h-28 animate-pulse rounded-xl border border-border bg-card motion-reduce:animate-none" aria-hidden />;
   }
   const { bestDistance, bestTime, outcome } = search;
   const exponent = bestDistance > 0 ? -Math.log10(bestDistance) : 6;
