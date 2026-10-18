@@ -116,7 +116,7 @@ export function LiveFormula() {
                   disabled={value <= min}
                   aria-label={`Dividir la ${name} entre 2`}
                   onClick={() => setSymbol(key, value / 2)}
-                  className="font-mono"
+                  className="font-mono pointer-coarse:min-w-11"
                 >
                   ÷2
                 </Button>
@@ -126,7 +126,7 @@ export function LiveFormula() {
                   disabled={value >= max}
                   aria-label={`Multiplicar la ${name} por 2`}
                   onClick={() => setSymbol(key, value * 2)}
-                  className="font-mono"
+                  className="font-mono pointer-coarse:min-w-11"
                 >
                   ×2
                 </Button>
