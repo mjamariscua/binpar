@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LiveSummary } from "@/components/ui/live-summary";
 import { EARTH_MOON_FORCE_N } from "@/lib/gravity/earth-moon";
 import { FORMULA_LIMITS, explainChange, forceRatio, type FormulaSymbol } from "@/lib/gravity/formula";
-import { formatScientific } from "@/lib/format";
+import { formatDecimal, formatScientific } from "@/lib/format";
 import { useInViewport } from "@/lib/hooks/use-in-viewport";
 import { useLabStore } from "@/lib/store/lab-store";
 import { Hint } from "./hint";
@@ -18,7 +18,7 @@ const UNITS: Record<FormulaSymbol, { short: string; long: string }> = {
   r: { short: "× 384 400 km", long: "veces la distancia Tierra–Luna" },
 };
 
-const fmt = (v: number) => v.toFixed(2);
+const fmt = (v: number) => formatDecimal(v, 2);
 
 /** Alternativa al arrastre (WCAG 2.5.7): cada símbolo se puede duplicar o dividir entre 2 con un toque. */
 const STEPPERS: readonly { key: FormulaSymbol; short: string; name: string }[] = [
@@ -71,7 +71,7 @@ export function LiveFormula() {
         <div className="flex items-center justify-center gap-3 font-heading text-5xl sm:gap-5 sm:text-7xl">
           <div className="flex flex-col items-center">
             <span className="italic">F</span>
-            <span className="font-mono text-xs text-glow-amber tabular-nums">× {ratio < 0.01 ? ratio.toExponential(1) : fmt(ratio)}</span>
+            <span className="font-mono text-xs text-glow-amber tabular-nums">× {ratio < 0.01 ? formatScientific(ratio, 2, ",") : fmt(ratio)}</span>
           </div>
           <span aria-hidden>=</span>
           <button
@@ -96,7 +96,7 @@ export function LiveFormula() {
           </div>
         </div>
         <p id={gNoteId} hidden={!showG} className="mx-auto mt-6 max-w-prose text-center text-sm text-muted-foreground">
-          G = 6.674·10⁻¹¹ N·m²/kg² es la constante de gravitación universal: el mismo número para una manzana, la
+          G = 6,674·10⁻¹¹ N·m²/kg² es la constante de gravitación universal: el mismo número para una manzana, la
           Luna o dos galaxias. Es tan pequeña que la atracción entre dos personas es imperceptible. Henry Cavendish
           la midió en 1798 con dos bolas de plomo y una balanza de torsión.
         </p>
@@ -154,7 +154,7 @@ export function LiveFormula() {
         </p>
         <div className="flex shrink-0 items-center gap-3">
           <span className="font-mono text-sm text-muted-foreground tabular-nums">
-            F = {formatScientific(ratio * EARTH_MOON_FORCE_N, 3)} N
+            F = {formatScientific(ratio * EARTH_MOON_FORCE_N, 3, ",")} N
           </span>
           <Button variant="outline" size="sm" onClick={resetFormula}>
             <RotateCcw /> Tierra y Luna de hoy
@@ -183,7 +183,7 @@ function ForceDiagram({ m1, m2, r, ratio }: { m1: number; m2: number; r: number;
   const arrowY = px(110 - Math.max(earthR, moonR) - 26);
 
   return (
-    <svg viewBox="0 0 600 220" className="w-full" role="img" aria-label={`La Tierra y la Luna se atraen con ${ratio.toFixed(2)} veces la fuerza actual, igual sobre cada una.`}>
+    <svg viewBox="0 0 600 220" className="w-full" role="img" aria-label={`La Tierra y la Luna se atraen con ${fmt(ratio)} veces la fuerza actual, igual sobre cada una.`}>
       <circle cx={earthX} cy={110} r={earthR} fill="var(--glow-cyan)" fillOpacity={0.85} />
       <circle cx={moonX} cy={110} r={moonR} fill="#d9d6cf" />
       <Arrow x={earthX} y={arrowY} length={arrow} direction={1} />

@@ -54,5 +54,6 @@ export function explainChange(symbol: FormulaSymbol, before: number, after: numb
   return `Has ${verb} ${name} por ${fmt(k)}: la fuerza también se ha ${verb} por ${fmt(k)}.`;
 }
 
-const fmt = (x: number) => String(Number(x.toFixed(2)));
+/** Sin ceros de relleno y con coma decimal: 2, 1,5, 0,25. */
+const fmt = (x: number) => String(Number(x.toFixed(2))).replace(".", ",");
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

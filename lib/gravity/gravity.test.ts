@@ -21,6 +21,9 @@ describe("fórmula relativa", () => {
     expect(explainChange("m1", 2, 1)).toBe(
       "Has dividido la masa de la Tierra (m₁) por 2: la fuerza también se ha dividido por 2.",
     );
+    expect(explainChange("r", 1, 1.5)).toBe(
+      "Has multiplicado la distancia (r) por 1,5: la fuerza se divide por 1,5² = 2,25.",
+    );
   });
 });
 

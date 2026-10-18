@@ -92,7 +92,7 @@ export const DIAGNOSTIC: readonly DiagnosticQuestion[] = [
       {
         text: "Sí cae, pero se mueve de lado tan rápido que nunca llega",
         correct: true,
-        feedback: "Justo eso. Cae 1.4 mm cada segundo, pero avanza un kilómetro de lado: la Tierra se curva por debajo.",
+        feedback: "Justo eso. Cae 1,4 mm cada segundo, pero avanza un kilómetro de lado: la Tierra se curva por debajo.",
       },
       {
         text: "Porque el Sol la sujeta",

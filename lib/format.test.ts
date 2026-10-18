@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatInteger, formatScientific, formatValue } from "./format";
+import { formatDecimal, formatInteger, formatScientific, formatValue } from "./format";
 
 describe("formato de cifras", () => {
   it("formatValue quita ceros de relleno y el ruido de redondeo", () => {
@@ -12,6 +12,13 @@ describe("formato de cifras", () => {
   it("formatScientific usa superíndices", () => {
     expect(formatScientific(6.6e-8)).toBe("6.6·10⁻⁸");
     expect(formatScientific(1.25e12, 3)).toBe("1.25·10¹²");
+    expect(formatScientific(1.98e20, 3, ",")).toBe("1,98·10²⁰");
+  });
+
+  it("formatDecimal usa coma decimal (Parte A)", () => {
+    expect(formatDecimal(60.27, 1)).toBe("60,3");
+    expect(formatDecimal(5.5901, 2)).toBe("5,59");
+    expect(formatDecimal(4, 0)).toBe("4");
   });
 
   it("formatInteger separa los miles con espacio fino", () => {

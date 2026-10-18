@@ -12,7 +12,7 @@ import {
   circularPeriodDays,
   fallDistance,
 } from "@/lib/gravity/earth-moon";
-import { formatInteger } from "@/lib/format";
+import { formatDecimal, formatInteger } from "@/lib/format";
 import { useAutoplay } from "@/lib/hooks/use-autoplay";
 
 const MIN_DISTANCE = 3;
@@ -121,7 +121,7 @@ export function AppleMoon() {
   return (
     <div className="flex flex-col gap-6">
       <LiveSummary
-        text={`A ${distance.toFixed(1)} radios terrestres, la Luna cae ${formatLength(fall)} en el primer segundo: ${formatInteger(Math.round(ratio))} veces menos que la manzana.`}
+        text={`A ${formatDecimal(distance, 1)} radios terrestres, la Luna cae ${formatLength(fall)} en el primer segundo: ${formatInteger(Math.round(ratio))} veces menos que la manzana.`}
       />
       <Hint icon={Hand}>
         Arrastra la Luna para acercarla o alejarla, o enfócala con el tabulador y usa las flechas. Mira cuánto cae en un
@@ -136,7 +136,7 @@ export function AppleMoon() {
             aria-labelledby="luna-dibujo-titulo"
           >
             {/* Un único nodo de texto: <title> no admite varios hijos sin desajustes de hidratación. */}
-            <title id="luna-dibujo-titulo">{`La Tierra y la Luna a escala de distancia. La Luna está a ${distance.toFixed(1)} radios terrestres.`}</title>
+            <title id="luna-dibujo-titulo">{`La Tierra y la Luna a escala de distancia. La Luna está a ${formatDecimal(distance, 1)} radios terrestres.`}</title>
             <circle r={distance} fill="none" stroke="var(--muted-foreground)" strokeOpacity={0.35} strokeWidth={0.3} strokeDasharray="1.2 1.2" />
             <circle r={4} fill="var(--glow-cyan)" opacity={0.12} />
             <circle r={1} fill="var(--glow-cyan)" />
@@ -152,7 +152,7 @@ export function AppleMoon() {
               aria-valuemin={MIN_DISTANCE}
               aria-valuemax={MAX_DISTANCE}
               aria-valuenow={Math.round(distance)}
-              aria-valuetext={`${distance.toFixed(1)} radios terrestres`}
+              aria-valuetext={`${formatDecimal(distance, 1)} radios terrestres`}
               onKeyDown={onKeyDown}
               onPointerDown={(e) => {
                 e.currentTarget.setPointerCapture(e.pointerId);
@@ -197,12 +197,12 @@ export function AppleMoon() {
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-base">
             <dt className="text-muted-foreground">Distancia</dt>
             <dd className="font-mono tabular-nums">
-              {distance.toFixed(1)} radios · {formatInteger(Math.round(distance * EARTH_RADIUS_KM))} km
+              {formatDecimal(distance, 1)} radios · {formatInteger(Math.round(distance * EARTH_RADIUS_KM))} km
             </dd>
             <dt className="text-muted-foreground">Gravedad allí</dt>
             <dd className="font-mono tabular-nums">{formatAcceleration(acceleration)}</dd>
             <dt className="text-muted-foreground">Una vuelta tarda</dt>
-            <dd className="font-mono tabular-nums">{days.toFixed(1)} días</dd>
+            <dd className="font-mono tabular-nums">{formatDecimal(days, 1)} días</dd>
           </dl>
 
           <div className="rounded-xl border border-border bg-card p-4">
@@ -211,17 +211,17 @@ export function AppleMoon() {
               <span>
                 <span aria-hidden>🍎 </span>la manzana, en la superficie
               </span>
-              <span className="font-mono tabular-nums">{APPLE_FALL_M.toFixed(1)} m</span>
+              <span className="font-mono tabular-nums">{formatDecimal(APPLE_FALL_M, 1)} m</span>
             </p>
             <p className="mt-1 flex items-baseline justify-between gap-3">
               <span>
-                <span aria-hidden>🌕 </span>la Luna, a {distance.toFixed(1)} radios
+                <span aria-hidden>🌕 </span>la Luna, a {formatDecimal(distance, 1)} radios
               </span>
               <span className="font-mono text-glow-amber tabular-nums">{formatLength(fall)}</span>
             </p>
             <p className="mt-3 border-t border-border pt-3">
-              {distance.toFixed(1)} veces más lejos del centro de la Tierra, {formatInteger(Math.round(ratio))} veces menos
-              caída: {distance.toFixed(1)}².
+              {formatDecimal(distance, 1)} veces más lejos del centro de la Tierra, {formatInteger(Math.round(ratio))} veces menos
+              caída: {formatDecimal(distance, 1)}².
             </p>
           </div>
         </div>
@@ -231,11 +231,11 @@ export function AppleMoon() {
 }
 
 function formatAcceleration(a: number): string {
-  return a >= 0.1 ? `${a.toFixed(2)} m/s²` : `${(a * 1000).toFixed(2)} mm/s²`;
+  return a >= 0.1 ? `${formatDecimal(a, 2)} m/s²` : `${formatDecimal(a * 1000, 2)} mm/s²`;
 }
 
 function formatLength(m: number): string {
-  if (m >= 1) return `${m.toFixed(2)} m`;
-  if (m >= 0.01) return `${(m * 100).toFixed(1)} cm`;
-  return `${(m * 1000).toFixed(2)} mm`;
+  if (m >= 1) return `${formatDecimal(m, 2)} m`;
+  if (m >= 0.01) return `${formatDecimal(m * 100, 1)} cm`;
+  return `${formatDecimal(m * 1000, 2)} mm`;
 }

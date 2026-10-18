@@ -72,7 +72,7 @@ export default function GravityPage() {
         <Tex display>{String.raw`a = g\left(\frac{R_\oplus}{d}\right)^{2}`}</Tex>
         <Prose>
           <p className="text-base text-muted-foreground">
-            <Tex>g</Tex> es la gravedad en la superficie (9.81 m/s²), <Tex>R_\oplus</Tex> el radio de la Tierra y{" "}
+            <Tex>g</Tex> es la gravedad en la superficie (9,81 m/s²), <Tex>R_\oplus</Tex> el radio de la Tierra y{" "}
             <Tex>d</Tex> la distancia al centro.
           </p>
         </Prose>

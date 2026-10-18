@@ -20,7 +20,7 @@ import {
   predictLaunch,
   type ScenarioName,
 } from "@/lib/gravity/sandbox";
-import { formatInteger } from "@/lib/format";
+import { formatDecimal, formatInteger } from "@/lib/format";
 import { useInViewport } from "@/lib/hooks/use-in-viewport";
 import { useNearViewport } from "@/lib/hooks/use-near-viewport";
 import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
@@ -98,7 +98,7 @@ function FlightBadge({ announce }: { announce: boolean }) {
       </span>
       {flight.status === "en-vuelo" && (
         <span className="ml-2 font-mono text-muted-foreground tabular-nums">
-          {formatInteger(flight.altitudeKm)} km · {flight.speedKms.toFixed(2)} km/s
+          {formatInteger(flight.altitudeKm)} km · {formatDecimal(flight.speedKms, 2)} km/s
         </span>
       )}
     </p>
@@ -134,7 +134,7 @@ function SandboxControls({ announce }: { announce: boolean }) {
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between text-base">
           <label id={speedId}>Velocidad</label>
-          <span className="font-mono tabular-nums">{speedKms.toFixed(2)} km/s</span>
+          <span className="font-mono tabular-nums">{formatDecimal(speedKms, 2)} km/s</span>
         </div>
         <Slider
           value={[speedKms]}
@@ -142,11 +142,11 @@ function SandboxControls({ announce }: { announce: boolean }) {
           max={SPEED_LIMITS_KMS.max}
           step={0.05}
           onValueChange={([v]) => setLaunchParams({ speedKms: v })}
-          thumbProps={{ "aria-labelledby": speedId, "aria-valuetext": `${speedKms.toFixed(2)} kilómetros por segundo` }}
+          thumbProps={{ "aria-labelledby": speedId, "aria-valuetext": `${formatDecimal(speedKms, 2)} kilómetros por segundo` }}
         />
         <p className="text-base text-muted-foreground">
-          A esta altura: órbita circular con {CIRCULAR_KMS.toFixed(2)} km/s; para escapar hacen falta{" "}
-          {ESCAPE_KMS.toFixed(2)} km/s.
+          A esta altura: órbita circular con {formatDecimal(CIRCULAR_KMS, 2)} km/s; para escapar hacen falta{" "}
+          {formatDecimal(ESCAPE_KMS, 2)} km/s.
         </p>
       </div>
 
@@ -177,7 +177,7 @@ function SandboxControls({ announce }: { announce: boolean }) {
           {(orbit.kind === "circular" || orbit.kind === "eliptica") &&
             `Cae sin parar, pero se mueve de lado tan rápido que nunca llega al suelo. Altura entre ${formatInteger(
               Math.round((orbit.periapsis - PLANET_RADIUS) * KM_PER_UNIT),
-            )} y ${formatInteger(Math.round((orbit.apoapsis - PLANET_RADIUS) * KM_PER_UNIT))} km; una vuelta dura ${hours?.toFixed(1)} h.`}
+            )} y ${formatInteger(Math.round((orbit.apoapsis - PLANET_RADIUS) * KM_PER_UNIT))} km; una vuelta dura ${hours === null ? "" : formatDecimal(hours, 1)} h.`}
         </p>
       </div>
 

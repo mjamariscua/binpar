@@ -5,7 +5,7 @@ import type { TutorUIMessage } from "@/lib/tutor/tools";
 type ToolPart = Extract<TutorUIMessage["parts"][number], { type: `tool-${string}` }>;
 
 const ORBIT_LABELS = { circular: "circular", eliptica: "elíptica", escape: "escapa", choque: "se estrella" } as const;
-const fmt = (v: number) => String(Number(v.toFixed(2)));
+const fmt = (v: number) => String(Number(v.toFixed(2))).replace(".", ",");
 
 /**
  * Lo que el tutor ha hecho en el laboratorio, contado en el propio chat: la

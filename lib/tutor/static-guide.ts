@@ -40,7 +40,7 @@ export const EXPERIMENTS: readonly Experiment[] = [
   {
     id: "orbita-circular",
     title: "Caer sin llegar nunca",
-    prediction: "Un satélite lanzado en horizontal a 5.59 km/s, a 6371 km de altura: ¿cae, escapa o da vueltas?",
+    prediction: "Un satélite lanzado en horizontal a 5,59 km/s, a 6371 km de altura: ¿cae, escapa o da vueltas?",
     call: { toolName: "loadScenario", input: { name: "circular" } },
     explanation:
       "Da vueltas: está cayendo todo el rato, pero avanza tan deprisa que la superficie se curva por debajo al mismo ritmo. Es lo mismo que le pasa a la Luna. La gravedad sí llega al espacio: es la que lo curva.",
@@ -49,7 +49,7 @@ export const EXPERIMENTS: readonly Experiment[] = [
   {
     id: "escape",
     title: "Escapar de la Tierra",
-    prediction: "¿Y si lo lanzamos un 10 % más rápido que la velocidad de escape (8.7 km/s)?",
+    prediction: "¿Y si lo lanzamos un 10 % más rápido que la velocidad de escape (8,7 km/s)?",
     call: { toolName: "loadScenario", input: { name: "escape" } },
     explanation:
       "Se va para siempre. La gravedad lo frena durante todo el camino, pero se debilita tan rápido con la distancia (otra vez el cuadrado) que nunca consigue pararlo.",
