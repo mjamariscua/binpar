@@ -1,6 +1,6 @@
 "use client";
 
-import { Rocket } from "lucide-react";
+import { Hand, Rocket } from "lucide-react";
 import { lazy, Suspense, useId } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { formatInteger } from "@/lib/format";
 import { useNearViewport } from "@/lib/hooks/use-near-viewport";
 import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import { useLabStore, type FlightStatus } from "@/lib/store/lab-store";
+import { Hint } from "./hint";
 
 const SandboxScene = lazy(() => import("./sandbox-scene"));
 
@@ -45,29 +46,35 @@ export function OrbitSandbox({ compact = false }: { compact?: boolean }) {
   const [ref, near] = useNearViewport<HTMLDivElement>();
 
   return (
-    <div className={compact ? "flex flex-col gap-5" : "grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"}>
-      <div
-        ref={ref}
-        className="relative aspect-square w-full overflow-hidden rounded-xl border border-border"
-        style={{ background: SCENE_BACKGROUND }}
-      >
-        {near && (
-          <ErrorBoundary
-            fallback={() => (
-              <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted-foreground">
-                Este navegador no puede mostrar la simulación (WebGL no disponible). Los controles y la predicción
-                siguen funcionando.
-              </p>
-            )}
-          >
-            <Suspense fallback={<p className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Preparando el planeta…</p>}>
-              <SandboxScene />
-            </Suspense>
-          </ErrorBoundary>
-        )}
-        <FlightBadge />
+    <div className="flex flex-col gap-6">
+      <Hint icon={Hand}>
+        Elige un lanzamiento de ejemplo, o ajusta velocidad y ángulo y pulsa «Lanzar». También puedes arrastrar desde
+        el satélite para apuntar y soltar para lanzar.
+      </Hint>
+      <div className={compact ? "flex flex-col gap-5" : "grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"}>
+        <div
+          ref={ref}
+          className="relative aspect-square w-full overflow-hidden rounded-xl border border-border"
+          style={{ background: SCENE_BACKGROUND }}
+        >
+          {near && (
+            <ErrorBoundary
+              fallback={() => (
+                <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted-foreground">
+                  Este navegador no puede mostrar la simulación (WebGL no disponible). Los controles y la predicción
+                  siguen funcionando.
+                </p>
+              )}
+            >
+              <Suspense fallback={<p className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Preparando el planeta…</p>}>
+                <SandboxScene />
+              </Suspense>
+            </ErrorBoundary>
+          )}
+          <FlightBadge />
+        </div>
+        <SandboxControls />
       </div>
-      <SandboxControls />
     </div>
   );
 }
@@ -113,7 +120,7 @@ function SandboxControls() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between text-sm">
+        <div className="flex items-baseline justify-between text-base">
           <label id={speedId}>Velocidad</label>
           <span className="font-mono tabular-nums">{speedKms.toFixed(2)} km/s</span>
         </div>
@@ -125,14 +132,14 @@ function SandboxControls() {
           onValueChange={([v]) => setLaunchParams({ speedKms: v })}
           thumbProps={{ "aria-labelledby": speedId, "aria-valuetext": `${speedKms.toFixed(2)} kilómetros por segundo` }}
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           A esta altura: órbita circular con {CIRCULAR_KMS.toFixed(2)} km/s; para escapar hacen falta{" "}
           {ESCAPE_KMS.toFixed(2)} km/s.
         </p>
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between text-sm">
+        <div className="flex items-baseline justify-between text-base">
           <label id={angleId}>Ángulo sobre la horizontal</label>
           <span className="font-mono tabular-nums">{angleDeg.toFixed(0)}°</span>
         </div>
@@ -146,7 +153,7 @@ function SandboxControls() {
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4 text-sm" aria-live="polite">
+      <div className="rounded-xl border border-border bg-card p-4 text-base" aria-live="polite">
         <p className="text-muted-foreground">Si lanzas así:</p>
         <p className="mt-1 text-lg">{ORBIT_KIND_LABELS[orbit.kind]}</p>
         <p className="mt-2 text-muted-foreground">
@@ -164,10 +171,7 @@ function SandboxControls() {
       <Button onClick={() => fire()} className="self-start">
         <Rocket /> Lanzar
       </Button>
-      <p className="text-xs text-muted-foreground">
-        También puedes arrastrar desde el satélite para apuntar y soltar para lanzar. Tiempo acelerado: cada segundo
-        en pantalla son unos 20 minutos.
-      </p>
+      <p className="text-sm text-muted-foreground">Tiempo acelerado: cada segundo en pantalla son unos 20 minutos.</p>
     </div>
   );
 }

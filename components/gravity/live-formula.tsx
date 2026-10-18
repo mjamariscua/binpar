@@ -1,12 +1,13 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { MoveHorizontal, RotateCcw } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { EARTH_MOON_FORCE_N } from "@/lib/gravity/earth-moon";
 import { FORMULA_LIMITS, explainChange, forceRatio, type FormulaSymbol } from "@/lib/gravity/formula";
 import { formatScientific } from "@/lib/format";
 import { useLabStore } from "@/lib/store/lab-store";
+import { Hint } from "./hint";
 import { ScrubValue } from "./scrub-value";
 
 const UNITS: Record<FormulaSymbol, { short: string; long: string }> = {
@@ -50,6 +51,9 @@ export function LiveFormula() {
 
   return (
     <div className="flex flex-col gap-8">
+      <Hint icon={MoveHorizontal}>
+        Arrastra en horizontal los símbolos subrayados (m₁, m₂ y r), o enfócalos con el tabulador y usa las flechas.
+      </Hint>
       <div role="group" aria-label="Fórmula de la gravitación universal: F igual a G por m₁ por m₂ entre r al cuadrado" className="rounded-2xl border border-border bg-card px-4 py-8">
         <div className="flex items-center justify-center gap-3 font-heading text-5xl sm:gap-5 sm:text-7xl">
           <div className="flex flex-col items-center">
@@ -96,9 +100,7 @@ export function LiveFormula() {
               {explainChange(lastChange.symbol, lastChange.before, lastChange.after)}
             </>
           ) : (
-            <span className="text-muted-foreground">
-              Arrastra en horizontal los símbolos subrayados, o enfócalos y usa las flechas.
-            </span>
+            <span className="text-muted-foreground">La fuerza con que se atraen hoy la Tierra y la Luna.</span>
           )}
         </p>
         <div className="flex shrink-0 items-center gap-3">

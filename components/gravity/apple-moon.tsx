@@ -1,7 +1,9 @@
 "use client";
 
+import { Hand } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { Hint } from "./hint";
 import {
   EARTH_RADIUS_KM,
   MOON_DISTANCE_RADII,
@@ -104,104 +106,110 @@ export function AppleMoon() {
   const days = circularPeriodDays(distance);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
-      <div className="mx-auto w-full max-w-[560px]">
-        <svg
-          ref={svgRef}
-          viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
-          className="aspect-square w-full touch-none select-none"
-          aria-labelledby="luna-dibujo-titulo"
-        >
-          {/* Un único nodo de texto: <title> no admite varios hijos sin desajustes de hidratación. */}
-          <title id="luna-dibujo-titulo">{`La Tierra y la Luna a escala de distancia. La Luna está a ${distance.toFixed(1)} radios terrestres.`}</title>
-          <circle r={distance} fill="none" stroke="var(--muted-foreground)" strokeOpacity={0.35} strokeWidth={0.3} strokeDasharray="1.2 1.2" />
-          <circle r={4} fill="var(--glow-cyan)" opacity={0.12} />
-          <circle r={1} fill="var(--glow-cyan)" />
-          <text y={7.5} textAnchor="middle" fontSize={3.4} fill="var(--muted-foreground)">
-            Tierra (a escala)
-          </text>
-
-          <g
-            ref={moonRef}
-            role="slider"
-            tabIndex={0}
-            aria-label="Distancia de la Luna a la Tierra"
-            aria-valuemin={MIN_DISTANCE}
-            aria-valuemax={MAX_DISTANCE}
-            aria-valuenow={Math.round(distance)}
-            aria-valuetext={`${distance.toFixed(1)} radios terrestres`}
-            onKeyDown={onKeyDown}
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId);
-              setDragging(true);
-            }}
-            onPointerMove={(e) => dragging && dragTo(e)}
-            onPointerUp={() => setDragging(false)}
-            onPointerCancel={() => setDragging(false)}
-            className="cursor-grab outline-none focus-visible:[&>.focus-ring]:opacity-100 active:cursor-grabbing"
+    <div className="flex flex-col gap-6">
+      <Hint icon={Hand}>
+        Arrastra la Luna para acercarla o alejarla, o enfócala con el tabulador y usa las flechas. Mira cuánto cae en un
+        segundo a cada distancia.
+      </Hint>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
+        <div className="mx-auto w-full max-w-[560px]">
+          <svg
+            ref={svgRef}
+            viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
+            className="aspect-square w-full touch-none select-none"
+            aria-labelledby="luna-dibujo-titulo"
           >
-            {/* Área táctil generosa (≈ 40 px) alrededor de una Luna pequeña. */}
-            <circle r={7} fill="transparent" />
-            <circle className="focus-ring opacity-0" r={5} fill="none" stroke="var(--ring)" strokeWidth={0.6} />
-            {/* Caída: hacia la Tierra. */}
-            <line x1={-2.8} y1={0} x2={-11} y2={0} stroke="var(--glow-amber)" strokeWidth={0.7} />
-            <path d="M -12.5 0 L -10.3 -1.4 L -10.3 1.4 Z" fill="var(--glow-amber)" />
-            {/* Velocidad: tangente a la órbita. */}
-            <line x1={0} y1={-2.8} x2={0} y2={-11} stroke="var(--foreground)" strokeOpacity={0.6} strokeWidth={0.5} strokeDasharray="1 0.8" />
-            <path d="M 0 -12.5 L -1.4 -10.3 L 1.4 -10.3 Z" fill="var(--foreground)" fillOpacity={0.6} />
-            <circle r={2.2} fill="#d9d6cf" />
-          </g>
-        </svg>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          Arrastra la Luna o enfócala con el tabulador y usa las flechas.{" "}
-          <span className="text-glow-amber">Ámbar</span>: hacia dónde cae. Discontinua: hacia dónde iría si no cayera.
-        </p>
-      </div>
+            {/* Un único nodo de texto: <title> no admite varios hijos sin desajustes de hidratación. */}
+            <title id="luna-dibujo-titulo">{`La Tierra y la Luna a escala de distancia. La Luna está a ${distance.toFixed(1)} radios terrestres.`}</title>
+            <circle r={distance} fill="none" stroke="var(--muted-foreground)" strokeOpacity={0.35} strokeWidth={0.3} strokeDasharray="1.2 1.2" />
+            <circle r={4} fill="var(--glow-cyan)" opacity={0.12} />
+            <circle r={1} fill="var(--glow-cyan)" />
+            <text y={7.5} textAnchor="middle" fontSize={3.4} fill="var(--muted-foreground)">
+              Tierra (a escala)
+            </text>
 
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => (
-            <Button
-              key={p.label}
-              variant="outline"
-              size="sm"
-              aria-pressed={Math.abs(distance - p.distance) < 0.05}
-              onClick={() => setDistance(p.distance)}
+            <g
+              ref={moonRef}
+              role="slider"
+              tabIndex={0}
+              aria-label="Distancia de la Luna a la Tierra"
+              aria-valuemin={MIN_DISTANCE}
+              aria-valuemax={MAX_DISTANCE}
+              aria-valuenow={Math.round(distance)}
+              aria-valuetext={`${distance.toFixed(1)} radios terrestres`}
+              onKeyDown={onKeyDown}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                setDragging(true);
+              }}
+              onPointerMove={(e) => dragging && dragTo(e)}
+              onPointerUp={() => setDragging(false)}
+              onPointerCancel={() => setDragging(false)}
+              className="cursor-grab outline-none focus-visible:[&>.focus-ring]:opacity-100 active:cursor-grabbing"
             >
-              {p.label}
-            </Button>
-          ))}
+              {/* Área táctil generosa (≈ 40 px) alrededor de una Luna pequeña. */}
+              <circle r={7} fill="transparent" />
+              <circle className="focus-ring opacity-0" r={5} fill="none" stroke="var(--ring)" strokeWidth={0.6} />
+              {/* Caída: hacia la Tierra. */}
+              <line x1={-2.8} y1={0} x2={-11} y2={0} stroke="var(--glow-amber)" strokeWidth={0.7} />
+              <path d="M -12.5 0 L -10.3 -1.4 L -10.3 1.4 Z" fill="var(--glow-amber)" />
+              {/* Velocidad: tangente a la órbita. */}
+              <line x1={0} y1={-2.8} x2={0} y2={-11} stroke="var(--foreground)" strokeOpacity={0.6} strokeWidth={0.5} strokeDasharray="1 0.8" />
+              <path d="M 0 -12.5 L -1.4 -10.3 L 1.4 -10.3 Z" fill="var(--foreground)" fillOpacity={0.6} />
+              <circle r={2.2} fill="#d9d6cf" />
+            </g>
+          </svg>
+          <p className="mt-2 text-center text-base text-muted-foreground">
+            <span className="text-glow-amber">Flecha ámbar</span>: hacia dónde cae. Discontinua: hacia dónde iría si no
+            cayera.
+          </p>
         </div>
 
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">Distancia</dt>
-          <dd className="font-mono tabular-nums">
-            {distance.toFixed(1)} radios · {formatInteger(Math.round(distance * EARTH_RADIUS_KM))} km
-          </dd>
-          <dt className="text-muted-foreground">Gravedad allí</dt>
-          <dd className="font-mono tabular-nums">{formatAcceleration(acceleration)}</dd>
-          <dt className="text-muted-foreground">Una vuelta tarda</dt>
-          <dd className="font-mono tabular-nums">{days.toFixed(1)} días</dd>
-        </dl>
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <Button
+                key={p.label}
+                variant="outline"
+                size="sm"
+                aria-pressed={Math.abs(distance - p.distance) < 0.05}
+                onClick={() => setDistance(p.distance)}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-sm text-muted-foreground">En el primer segundo de caída…</p>
-          <p className="mt-3 flex items-baseline justify-between gap-3">
-            <span>
-              <span aria-hidden>🍎 </span>la manzana, en la superficie
-            </span>
-            <span className="font-mono tabular-nums">{APPLE_FALL_M.toFixed(1)} m</span>
-          </p>
-          <p className="mt-1 flex items-baseline justify-between gap-3">
-            <span>
-              <span aria-hidden>🌕 </span>la Luna, a {distance.toFixed(1)} radios
-            </span>
-            <span className="font-mono text-glow-amber tabular-nums">{formatLength(fall)}</span>
-          </p>
-          <p className="mt-3 border-t border-border pt-3 text-sm">
-            {distance.toFixed(1)} veces más lejos del centro de la Tierra, {formatInteger(Math.round(ratio))} veces menos
-            caída: {distance.toFixed(1)}².
-          </p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-base">
+            <dt className="text-muted-foreground">Distancia</dt>
+            <dd className="font-mono tabular-nums">
+              {distance.toFixed(1)} radios · {formatInteger(Math.round(distance * EARTH_RADIUS_KM))} km
+            </dd>
+            <dt className="text-muted-foreground">Gravedad allí</dt>
+            <dd className="font-mono tabular-nums">{formatAcceleration(acceleration)}</dd>
+            <dt className="text-muted-foreground">Una vuelta tarda</dt>
+            <dd className="font-mono tabular-nums">{days.toFixed(1)} días</dd>
+          </dl>
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-muted-foreground">En el primer segundo de caída…</p>
+            <p className="mt-3 flex items-baseline justify-between gap-3">
+              <span>
+                <span aria-hidden>🍎 </span>la manzana, en la superficie
+              </span>
+              <span className="font-mono tabular-nums">{APPLE_FALL_M.toFixed(1)} m</span>
+            </p>
+            <p className="mt-1 flex items-baseline justify-between gap-3">
+              <span>
+                <span aria-hidden>🌕 </span>la Luna, a {distance.toFixed(1)} radios
+              </span>
+              <span className="font-mono text-glow-amber tabular-nums">{formatLength(fall)}</span>
+            </p>
+            <p className="mt-3 border-t border-border pt-3">
+              {distance.toFixed(1)} veces más lejos del centro de la Tierra, {formatInteger(Math.round(ratio))} veces menos
+              caída: {distance.toFixed(1)}².
+            </p>
+          </div>
         </div>
       </div>
     </div>
