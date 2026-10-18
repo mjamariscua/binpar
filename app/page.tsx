@@ -117,7 +117,15 @@ export default function GravityPage() {
             escapar, la energía del movimiento tiene que superar a la de la atracción:
           </p>
         </Prose>
-        <Tex display>{String.raw`v_{\text{circular}} = \sqrt{\frac{GM}{r}} \qquad v_{\text{escape}} = \sqrt{2}\,v_{\text{circular}}`}</Tex>
+        {/*
+          Dos fórmulas que se colocan en línea si caben y una bajo otra en
+          móvil. Cada una crece hasta ocupar su línea: a su ancho justo, KaTeX
+          desborda 2 px y aparecería una barra de scroll.
+        */}
+        <div className="flex flex-wrap gap-x-16 [&>*]:grow">
+          <Tex display>{String.raw`v_{\text{circular}} = \sqrt{\frac{GM}{r}}`}</Tex>
+          <Tex display>{String.raw`v_{\text{escape}} = \sqrt{2}\,v_{\text{circular}}`}</Tex>
+        </div>
       </Chapter>
 
       <Chapter id="tutor" number={4} title="Tu tutor">
