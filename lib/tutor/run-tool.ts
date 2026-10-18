@@ -18,6 +18,8 @@ export type ToolOutput<K extends keyof TutorTools> = TutorTools[K]["output"];
 
 export function runTutorTool(call: ToolCall, by: Actor = "tutor"): ToolOutput<typeof call.toolName> {
   const lab = useLabStore.getState();
+  // Quien lo pide está leyendo otra parte de la página: que el cambio se vea.
+  lab.requestReveal();
   switch (call.toolName) {
     case "setMass":
       lab.setTab("formula");

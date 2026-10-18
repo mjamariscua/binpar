@@ -11,7 +11,7 @@ const CHAPTERS = [
   { id: "manzana-y-luna", title: "La manzana y la Luna" },
   { id: "la-formula", title: "La fórmula, viva" },
   { id: "lanzar", title: "Lanzar un satélite" },
-  { id: "tutor", title: "Tu tutor" },
+  { id: "tutor", title: "Ponte a prueba" },
 ] as const;
 
 /**
@@ -128,7 +128,7 @@ export default function GravityPage() {
         </div>
       </Chapter>
 
-      <Chapter id="tutor" number={4} title="Tu tutor">
+      <Chapter id="tutor" number={4} title="Ponte a prueba">
         <TutorSection />
       </Chapter>
 

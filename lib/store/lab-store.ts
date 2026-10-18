@@ -56,6 +56,12 @@ interface LabStore {
   readonly launch: LaunchRequest | null;
   readonly tab: LabTab;
   readonly flight: FlightReadout;
+  /**
+   * Se incrementa cada vez que el tutor o un experimento mueve el laboratorio:
+   * el laboratorio se pone a la vista si no lo estaba (en móvil queda lejos del
+   * botón que lo ha movido).
+   */
+  readonly revealRequest: number;
 
   setSymbol: (symbol: FormulaSymbol, value: number, by?: Actor) => void;
   resetFormula: () => void;
@@ -65,6 +71,7 @@ interface LabStore {
   loadScenario: (name: ScenarioName, by?: Actor) => LaunchRequest;
   setTab: (tab: LabTab) => void;
   setFlight: (flight: FlightReadout) => void;
+  requestReveal: () => void;
 }
 
 const clamp = (v: number, { min, max }: { min: number; max: number }) => Math.min(max, Math.max(min, v));
@@ -77,6 +84,7 @@ export const useLabStore = create<LabStore>()((set, get) => ({
   launch: null,
   tab: "formula",
   flight: { status: "esperando", altitudeKm: 0, speedKms: 0 },
+  revealRequest: 0,
 
   setSymbol: (symbol, value, by = "persona") =>
     set((state) => {
@@ -111,4 +119,5 @@ export const useLabStore = create<LabStore>()((set, get) => ({
 
   setTab: (tab) => set({ tab }),
   setFlight: (flight) => set({ flight }),
+  requestReveal: () => set((state) => ({ revealRequest: state.revealRequest + 1 })),
 }));
