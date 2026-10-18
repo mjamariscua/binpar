@@ -21,7 +21,7 @@ Requisitos: Node ≥ 20.9 y pnpm 10 (`corepack enable`).
 ```bash
 pnpm install
 pnpm dev              # http://localhost:3000
-pnpm test             # 110 tests (física, órbitas, tutor, API)
+pnpm test             # 111 tests (física, órbitas, tutor, API, formato)
 pnpm typecheck
 pnpm lint
 pnpm orbits:report    # cierre, energía y coste de cada órbita
@@ -64,10 +64,15 @@ antemano. Nunca se simulan respuestas de un modelo.
 3. **Lanzar un satélite.** Se apunta arrastrando o con controles accesibles;
    antes de lanzar se ve la trayectoria prevista y si será circular, elíptica,
    de escape o de choque.
-4. **Tu tutor.** Diagnóstico de 3 preguntas que detecta ideas erróneas
+4. **Ponte a prueba.** Diagnóstico de 3 preguntas que detecta ideas erróneas
    comunes; después, un tutor de IA real (streaming) que conoce ese diagnóstico
    y **opera el laboratorio** con herramientas (cambia masas y distancias,
-   lanza satélites) para enseñar en vez de solo contar.
+   lanza satélites) para enseñar en vez de solo contar. Sin clave, experimentos
+   guiados escritos de antemano que mueven el mismo laboratorio.
+
+Cada capítulo plantea su experimento como una pregunta, con la instrucción
+antes del widget; la página cierra con «Lo que te llevas». Una cabecera fija
+dice en qué capítulo estás y deja saltar entre ellos.
 
 ### Parte B — la galería
 
@@ -122,11 +127,15 @@ scripts/                   informes reproducibles de las órbitas
 | **`<ViewTransition>` de React** en lugar de `layoutId` de Motion (previsto en el plan) | `layoutId` necesita ambos elementos montados a la vez; entre rutas no lo están. ViewTransition usa la API del navegador | Sin animación en navegadores sin soporte; una dependencia menos |
 | **Bloom con alternativa** (PerformanceMonitor, «reducir movimiento», dispositivos modestos) | Efectos solo donde no estropean la fluidez | Heurística de dispositivo aproximada |
 | **KaTeX renderizado en el servidor** | HTML + MathML sin JavaScript de KaTeX en el cliente | Solo fórmulas estáticas (las vivas son componentes propios) |
+| **Laboratorio que se desplaza a la vista** cuando el tutor o un experimento lo mueve (en vez de dejarlo fijo en pantalla) | En móvil queda lejos del botón que lo mueve. Fijarlo no sirve: con la pestaña Órbita mide más que la pantalla y taparía sus propios controles | La página salta al laboratorio; un botón flotante devuelve a donde estabas |
+| **Tamaño táctil de 44 px con `pointer: coarse`**, no por ancho de pantalla | Lo que importa es el dedo, no el ancho: una tablet necesita 44 px y un escritorio estrecho, no | Un portátil táctil cuyo puntero principal es el ratón ve la versión compacta |
+| **Coma decimal en la Parte A, punto en la B** | La A es divulgación en español; en la B las condiciones iniciales se comparan y copian con las publicaciones | Dos convenciones en la misma aplicación, documentadas en `lib/format.ts` |
+| **Cabecera fija con capítulos y progreso** | La portada mide unas diez pantallas en móvil | Ocupa 57 px de alto en todas las páginas |
 | **TypeScript `strict`** sin `noUncheckedIndexedAccess` | El núcleo numérico indexa typed arrays con índices acotados; los `!` no añadirían seguridad | Un índice fuera de rango daría `NaN` en silencio (lo detectarían los tests de energía) |
 
 ## Verificación
 
-- **110 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
+- **111 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
   cierre y conservación de energía de **cada órbita**, comparación de fuentes,
   clasificación de órbitas, cifras Tierra–Luna, descripciones de la galería
   (sus afirmaciones se comprueban), diagnóstico, proveedor, límite de
@@ -136,11 +145,14 @@ scripts/                   informes reproducibles de las órbitas
 - **Informes reproducibles**: `pnpm orbits:report` y `pnpm orbits:sources`
   generan las tablas de [docs/orbitas.md](docs/orbitas.md).
 - **Accesibilidad**: auditoría con axe-core 4.14 (WCAG 2.1 AA y buenas
-  prácticas) en las cinco páginas: 0 infracciones. Navegación completa por
-  teclado, foco visible, enlace para saltar al contenido, contrastes de 8:1 a
-  17:1 y respeto a «reducir movimiento».
-- **Navegador**: probado en Chrome, en escritorio y con viewport de móvil
-  (375 px), sin scroll horizontal; despliegue en Vercel y `docker compose up`
+  prácticas) en las cinco páginas: 0 infracciones (antes de la última ronda
+  de mejoras de UX; conviene repetirla). Navegación completa por teclado, foco
+  visible, enlace para saltar al contenido, contrastes de texto de 8:1 a 17:1
+  y de controles y estados de al menos 3:1, áreas táctiles de 44 px,
+  alternativa sin arrastre a cada gesto (WCAG 2.5.7), botón para pausar las
+  animaciones (2.2.2) y respeto a «reducir movimiento».
+- **Navegador**: probado en Chrome a 320, 375, 390, 768, 1280 y 1440 px, sin
+  scroll horizontal en ninguna ruta; despliegue en Vercel y `docker compose up`
   comprobados.
 
 ## Uso de IA
@@ -171,8 +183,11 @@ partir de mediciones y están documentadas arriba.
 - **Encuentros cercanos:** con paso fijo cuestan pasos; la interpolación se
   desvía hasta 10⁻³ y las estelas se ven en tramos rectos en el instante del
   encuentro.
-- **Móviles modestos:** la galería calcula las seis trayectorias en workers al
-  entrar (las tarjetas muestran el dibujo estático hasta que están listas).
+- **Móviles modestos:** cada tarjeta de la galería calcula su trayectoria en un
+  worker la primera vez que aparece en pantalla (hasta entonces, el dibujo
+  estático).
+- **Core Web Vitals:** el peso está medido (unos 240 KB de JS comprimido en la
+  portada), pero LCP, CLS e INP no se han medido en laboratorio.
 - **Transición galería → detalle:** solo anima en navegadores con View
   Transitions (Chromium reciente, Safari reciente).
 - **Escenas 3D:** tienen nombre, póster y controles accesibles, pero el
