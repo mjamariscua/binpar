@@ -106,7 +106,7 @@ function NoKeyBanner({ reason }: { reason: string }) {
         escribe un modelo.
       </p>
       <details className="mt-3 text-sm text-muted-foreground">
-        <summary className="cursor-pointer py-1 text-foreground/90">Para quien despliega la aplicación</summary>
+        <summary className="cursor-pointer py-1 text-foreground/90 pointer-coarse:py-3">Para quien despliega la aplicación</summary>
         <p className="mt-1">
           {reason} El tutor se activa con una clave de Anthropic, OpenAI o Google; los nombres de las variables están
           en la sección «Variables de entorno» del README.
@@ -126,7 +126,7 @@ function DiagnosticSummary({
   const { correct } = profileFrom(answers);
   return (
     <details className="rounded-lg border border-border px-4 py-2 text-sm">
-      <summary ref={summaryRef} className="cursor-pointer py-1">
+      <summary ref={summaryRef} className="cursor-pointer py-1 pointer-coarse:py-3">
         Diagnóstico: {correct} de {DIAGNOSTIC.length} — ver respuestas
       </summary>
       <ul className="mt-2 space-y-2 pb-2 text-muted-foreground">

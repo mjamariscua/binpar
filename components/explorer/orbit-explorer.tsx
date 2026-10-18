@@ -52,7 +52,7 @@ export function OrbitExplorer() {
             </p>
           )}
         </div>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground pointer-coarse:min-h-11">
           <input type="checkbox" checked={untilReturn} onChange={(e) => setUntilReturn(e.target.checked)} className="accent-primary" />
           Dibujar solo hasta el mejor retorno
         </label>
