@@ -212,15 +212,43 @@ function pushPoint(xy: Float32Array, count: { current: number }, x: number, y: n
   xy[(count.current - 1) * 2 + 1] = y;
 }
 
+/** Radio alrededor del punto de lanzamiento, en radios del planeta, donde empieza un apuntado. */
+const AIM_GRAB_RADIUS = 1.5;
+
 /**
  * Superficie invisible que recoge el arrastre: si empieza cerca del punto de
  * lanzamiento, la flecha sigue al puntero (dirección = ángulo, longitud =
  * velocidad) y al soltar se lanza.
+ *
+ * En pantallas táctiles el lienzo deja hacer scroll (no tiene touch-action:
+ * none, que bloquearía casi media pantalla). Solo un toque que empieza junto
+ * al satélite cancela el scroll, y si el navegador cancela el gesto de todos
+ * modos, el apuntado se abandona sin lanzar.
  */
 function AimSurface() {
   const setLaunchParams = useLabStore((s) => s.setLaunchParams);
   const fire = useLabStore((s) => s.fire);
   const aiming = useRef(false);
+  const canvas = useThree((s) => s.gl.domElement);
+  const size = useThree((s) => s.size);
+
+  useEffect(() => {
+    const zoom = Math.min(size.width, size.height) / (2 * VIEW_HALF);
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left - rect.width / 2) / zoom;
+      const y = (rect.height / 2 - (touch.clientY - rect.top)) / zoom;
+      if (Math.hypot(x, y - LAUNCH_RADIUS) <= AIM_GRAB_RADIUS) event.preventDefault();
+    };
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    return () => canvas.removeEventListener("touchstart", onTouchStart);
+  }, [canvas, size]);
+
+  const cancel = () => {
+    aiming.current = false;
+  };
 
   const aimAt = (e: ThreeEvent<PointerEvent>) => {
     const dx = e.point.x;
@@ -235,7 +263,7 @@ function AimSurface() {
     <mesh
       position={[0, 0, 2]}
       onPointerDown={(e) => {
-        if (Math.hypot(e.point.x, e.point.y - LAUNCH_RADIUS) > 1.5) return;
+        if (Math.hypot(e.point.x, e.point.y - LAUNCH_RADIUS) > AIM_GRAB_RADIUS) return;
         aiming.current = true;
         (e.target as Element).setPointerCapture(e.pointerId);
         aimAt(e);
@@ -246,6 +274,8 @@ function AimSurface() {
         aiming.current = false;
         fire();
       }}
+      onPointerCancel={cancel}
+      onLostPointerCapture={cancel}
     >
       <planeGeometry args={[VIEW_HALF * 6, VIEW_HALF * 6]} />
       <meshBasicMaterial transparent opacity={0} depthWrite={false} />

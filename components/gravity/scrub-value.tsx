@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
  *
  * Accesibilidad: es un role="slider" con nombre, valor y texto de valor; Home
  * y End llevan a los extremos; RePág y AvPág multiplican o dividen por 2.
+ *
+ * En táctil, touch-action: pan-y: el arrastre horizontal mueve el valor y el
+ * vertical sigue desplazando la página (el navegador cancela el arrastre).
  */
 export function ScrubValue({
   value,
@@ -80,7 +83,7 @@ export function ScrubValue({
       onPointerCancel={() => (drag.current = null)}
       onKeyDown={onKeyDown}
       className={cn(
-        "group relative inline-flex cursor-ew-resize touch-none flex-col items-center rounded-lg px-2 py-1 select-none",
+        "group relative inline-flex cursor-ew-resize touch-pan-y flex-col items-center rounded-lg px-2 py-1 select-none",
         "border-b-2 border-dashed border-primary/60 transition-colors hover:bg-primary/10 focus-visible:bg-primary/10",
         className,
       )}

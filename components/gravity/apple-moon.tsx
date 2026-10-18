@@ -58,6 +58,17 @@ export function AppleMoon() {
   const moonRef = useRef<SVGGElement>(null);
   const angle = useRef(Math.PI / 5);
 
+  // El dibujo deja hacer scroll en móvil; solo un toque sobre la Luna lo
+  // cancela, para poder arrastrarla. (touch-action no se aplica de forma
+  // fiable a elementos SVG, por eso se cancela el touchstart.)
+  useEffect(() => {
+    const moon = moonRef.current;
+    if (!moon) return;
+    const onTouchStart = (event: TouchEvent) => event.preventDefault();
+    moon.addEventListener("touchstart", onTouchStart, { passive: false });
+    return () => moon.removeEventListener("touchstart", onTouchStart);
+  }, []);
+
   // La Luna gira a la velocidad de una órbita circular a su distancia, con el
   // tiempo acelerado. Se mueve tocando el DOM directamente: sin renders.
   useEffect(() => {
@@ -116,7 +127,7 @@ export function AppleMoon() {
           <svg
             ref={svgRef}
             viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
-            className="aspect-square w-full touch-none select-none"
+            className="aspect-square w-full select-none"
             aria-labelledby="luna-dibujo-titulo"
           >
             {/* Un único nodo de texto: <title> no admite varios hijos sin desajustes de hidratación. */}
