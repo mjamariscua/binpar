@@ -8,14 +8,16 @@ import { EARTH_MOON_FORCE_N } from "@/lib/gravity/earth-moon";
 import { FORMULA_LIMITS, explainChange, forceRatio, type FormulaSymbol } from "@/lib/gravity/formula";
 import { formatDecimal, formatScientific } from "@/lib/format";
 import { useInViewport } from "@/lib/hooks/use-in-viewport";
+import { cn } from "@/lib/utils";
 import { useLabStore } from "@/lib/store/lab-store";
 import { Hint } from "./hint";
 import { ScrubValue } from "./scrub-value";
 
+/** Respecto a qué se mide cada símbolo: «1,00 ×» encima, la referencia debajo. */
 const UNITS: Record<FormulaSymbol, { short: string; long: string }> = {
-  m1: { short: "× Tierra", long: "veces la masa de la Tierra" },
-  m2: { short: "× Luna", long: "veces la masa de la Luna" },
-  r: { short: "× 384 400 km", long: "veces la distancia Tierra–Luna" },
+  m1: { short: "Tierra", long: "veces la masa de la Tierra" },
+  m2: { short: "Luna", long: "veces la masa de la Luna" },
+  r: { short: "384 400 km", long: "veces la distancia Tierra–Luna" },
 };
 
 const fmt = (v: number) => formatDecimal(v, 2);
@@ -56,8 +58,10 @@ export function LiveFormula() {
       valueText={`${fmt(formula[key])} ${UNITS[key].long}`}
     >
       <span className="italic">{glyph}</span>
-      <span className="font-mono text-xs text-muted-foreground not-italic tabular-nums">
-        {fmt(formula[key])} {UNITS[key].short}
+      {/* En móvil no caben: el valor se ve en las filas ÷2 / ×2 de debajo. */}
+      <span className="hidden flex-col items-center font-mono text-sm leading-tight text-muted-foreground not-italic tabular-nums sm:flex">
+        <span>{fmt(formula[key])} ×</span>
+        <span>{UNITS[key].short}</span>
       </span>
     </ScrubValue>
   );
@@ -68,11 +72,8 @@ export function LiveFormula() {
         Arrastra en horizontal los símbolos subrayados (m₁, m₂ y r), o usa los botones ÷2 y ×2 de debajo.
       </Hint>
       <div role="group" aria-label="Fórmula de la gravitación universal: F igual a G por m₁ por m₂ entre r al cuadrado" className="rounded-2xl border border-border bg-card px-4 py-8">
-        <div className="flex items-center justify-center gap-3 font-heading text-5xl sm:gap-5 sm:text-7xl">
-          <div className="flex flex-col items-center">
-            <span className="italic">F</span>
-            <span className="font-mono text-xs text-glow-amber tabular-nums">× {ratio < 0.01 ? formatScientific(ratio, 2, ",") : fmt(ratio)}</span>
-          </div>
+        <div className="flex items-center justify-center gap-2 font-heading text-[2.75rem] min-[400px]:gap-3 min-[400px]:text-5xl sm:gap-5 sm:text-7xl">
+          <span className="italic">F</span>
           <span aria-hidden>=</span>
           <button
             type="button"
@@ -82,13 +83,15 @@ export function LiveFormula() {
             className="flex flex-col items-center rounded-lg px-2 py-1 italic hover:bg-muted"
           >
             G
-            <span className="font-mono text-xs text-muted-foreground not-italic">¿qué es?</span>
+            <span className="max-w-[5ch] text-center font-mono text-sm leading-tight text-muted-foreground not-italic sm:max-w-none">
+              ¿qué es?
+            </span>
           </button>
           <span aria-hidden className="text-muted-foreground">·</span>
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-end gap-2 sm:gap-4">
               {symbol("m1", <>m<sub className="text-[0.5em]">1</sub></>)}
-              <span aria-hidden className="pb-6 text-muted-foreground">·</span>
+              <span aria-hidden className="text-muted-foreground sm:pb-10">·</span>
               {symbol("m2", <>m<sub className="text-[0.5em]">2</sub></>)}
             </div>
             <div aria-hidden className="h-0.5 w-full bg-foreground/80" />
@@ -100,6 +103,21 @@ export function LiveFormula() {
           Luna o dos galaxias. Es tan pequeña que la atracción entre dos personas es imperceptible. Henry Cavendish
           la midió en 1798 con dos bolas de plomo y una balanza de torsión.
         </p>
+        {/* El resultado de tocar la fórmula, grande y dentro de ella: antes vivía fuera, a 14 px. */}
+        <p className="mt-8 flex flex-wrap items-baseline justify-center gap-x-3 gap-y-2 border-t border-border pt-5 text-center">
+          <span className="text-muted-foreground">Fuerza</span>
+          <span className="font-mono text-2xl tabular-nums sm:text-3xl">
+            {formatScientific(ratio * EARTH_MOON_FORCE_N, 3, ",")} N
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5 font-mono text-sm tabular-nums",
+              Math.abs(ratio - 1) < 1e-9 ? "bg-muted text-muted-foreground" : "bg-primary/15 text-primary",
+            )}
+          >
+            × {ratio < 0.01 ? formatScientific(ratio, 2, ",") : fmt(ratio)} la de hoy
+          </span>
+        </p>
       </div>
 
       <div role="group" aria-label="Cambiar los símbolos sin arrastrar" className="-mt-4 grid gap-2 sm:grid-cols-3">
@@ -107,8 +125,9 @@ export function LiveFormula() {
           const value = formula[key];
           const { min, max } = FORMULA_LIMITS[key];
           return (
-            <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-1.5">
+            <div key={key} className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5">
               <span className="text-sm text-muted-foreground">{short}</span>
+              <span className="ml-auto font-mono text-sm tabular-nums">{fmt(value)}×</span>
               <div className="flex gap-1">
                 <Button
                   variant="outline"
@@ -152,14 +171,9 @@ export function LiveFormula() {
             <span className="text-muted-foreground">La fuerza con que se atraen hoy la Tierra y la Luna.</span>
           )}
         </p>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="font-mono text-sm text-muted-foreground tabular-nums">
-            F = {formatScientific(ratio * EARTH_MOON_FORCE_N, 3, ",")} N
-          </span>
-          <Button variant="outline" size="sm" onClick={resetFormula}>
-            <RotateCcw /> Tierra y Luna de hoy
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={resetFormula} className="shrink-0 self-start">
+          <RotateCcw /> Tierra y Luna de hoy
+        </Button>
       </div>
     </div>
   );
