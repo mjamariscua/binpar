@@ -17,7 +17,7 @@ import { CHAPTERS } from "@/lib/chapters";
 export default function GravityPage() {
   return (
     <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-6xl overflow-x-clip px-4 sm:px-6">
-      <header className="relative flex min-h-[85vh] flex-col justify-center py-16">
+      <header className="relative flex min-h-[85svh] flex-col justify-center py-16 md:min-h-[65svh] lg:min-h-[85svh]">
         <HeroOrbits />
         <p className="relative font-mono text-sm tracking-widest text-primary uppercase">Ley de gravitación universal</p>
         <h1 className="relative mt-4 font-heading text-[clamp(5rem,18vw,13rem)] leading-[0.85] italic drop-shadow-[0_0_40px_rgb(245_184_61/0.25)]">
@@ -42,6 +42,18 @@ export default function GravityPage() {
               </li>
             ))}
           </ol>
+          {/* La Parte B, visible desde el principio: antes solo se descubría al final o en la cabecera. */}
+          <Link
+            href="/tres-cuerpos"
+            scroll={false}
+            className="mt-2 flex items-baseline justify-between gap-3 rounded-lg border border-dashed border-primary/60 bg-background/70 px-4 py-3 text-primary backdrop-blur-sm transition-colors hover:bg-primary/10"
+          >
+            <span>
+              <span className="font-mono text-sm">Después</span> · El problema de los tres cuerpos: seis órbitas que se
+              repiten
+            </span>
+            <span aria-hidden>→</span>
+          </Link>
         </nav>
       </header>
 

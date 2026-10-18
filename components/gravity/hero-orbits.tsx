@@ -23,7 +23,8 @@ export function HeroOrbits() {
     <svg
       viewBox="-200 -200 400 400"
       aria-hidden
-      className="pointer-events-none absolute top-1/2 -right-[20%] w-[min(110vw,760px)] -translate-y-1/2 opacity-40 sm:-right-[8%] sm:opacity-90"
+      // En móvil, arriba (detrás del título) y no detrás del párrafo, que es lo que hay que leer.
+      className="pointer-events-none absolute top-0 -right-[25%] w-[min(110vw,760px)] opacity-40 sm:top-1/2 sm:-right-[8%] sm:-translate-y-1/2 sm:opacity-90"
     >
       <defs>
         <filter id="hero-glow" x="-50%" y="-50%" width="200%" height="200%">
