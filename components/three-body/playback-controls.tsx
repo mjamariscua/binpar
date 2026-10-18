@@ -46,7 +46,7 @@ export function PlaybackControls({ slug, period }: { slug: OrbitSlug; period: nu
             "aria-valuetext": `${percent} % del periodo (t = ${time.toFixed(2)} de ${period.toFixed(2)})`,
           }}
         />
-        <span className="w-24 text-right font-mono text-xs text-muted-foreground tabular-nums" aria-hidden>
+        <span className="w-24 shrink-0 text-right font-mono text-sm text-muted-foreground tabular-nums" aria-hidden>
           {time.toFixed(2)} / {period.toFixed(2)}
         </span>
       </div>

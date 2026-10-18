@@ -5,12 +5,27 @@ import { BODY_COLORS } from "@/lib/orbits/colors";
 import type { OrbitSummary } from "@/lib/orbits/summary";
 import { formatInteger, formatScientific, formatValue } from "@/lib/format";
 
-/** Panel de datos del detalle. Todo es estático: se calcula al generar la página. */
-export function OrbitDetails({ orbit, summary }: { orbit: PeriodicOrbit; summary: OrbitSummary }) {
-  const [first] = orbit.bodies;
+/*
+ * Datos del detalle, en dos piezas. Todo es estático: se calcula al generar
+ * la página.
+ *
+ * - OrbitSummaryPanel, junto al visor: qué estás viendo, en lenguaje llano, y
+ *   las magnitudes y su verificación.
+ * - OrbitDataPanel, a todo el ancho debajo: condiciones iniciales y fuentes.
+ *   En la columna lateral (24 rem) la tabla no cabía y había que desplazarla.
+ */
 
+export function OrbitSummaryPanel({ orbit, summary }: { orbit: PeriodicOrbit; summary: OrbitSummary }) {
   return (
     <aside aria-label="Datos de la órbita" className="flex min-w-0 flex-col gap-8 text-sm">
+      <Section title="Qué estás viendo">
+        <p className="text-base text-muted-foreground">
+          Cada punto de color es uno de los tres cuerpos, todos con la misma masa. La línea tenue es el recorrido
+          completo; la estela, lo que cada cuerpo acaba de recorrer. Solo los mueve la atracción entre ellos, y al
+          cabo de un periodo vuelven exactamente a donde empezaron: por eso la coreografía se repite.
+        </p>
+      </Section>
+
       <Section title="Magnitudes">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
           <Term label="Periodo T" value={formatValue(orbit.period)} />
@@ -36,7 +51,19 @@ export function OrbitDetails({ orbit, summary }: { orbit: PeriodicOrbit; summary
           muestras guardadas.
         </p>
       </Section>
+    </aside>
+  );
+}
 
+export function OrbitDataPanel({ orbit }: { orbit: PeriodicOrbit }) {
+  const [first] = orbit.bodies;
+
+  return (
+    <section
+      aria-label="Condiciones iniciales y fuentes"
+      // minmax(0, 1fr) en móvil: con la pista implícita (auto), la tabla ensancharía la página.
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 text-sm lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+    >
       <Section title="Condiciones iniciales">
         <ScrollX label="Condiciones iniciales (se desplaza en horizontal)">
           <table className="w-full font-mono text-sm tabular-nums">
@@ -98,7 +125,7 @@ export function OrbitDetails({ orbit, summary }: { orbit: PeriodicOrbit; summary
         </dl>
         <p className="mt-4 text-muted-foreground">{orbit.provenance}</p>
       </Section>
-    </aside>
+    </section>
   );
 }
 

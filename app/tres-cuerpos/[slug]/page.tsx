@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { OrbitDetails } from "@/components/three-body/orbit-details";
+import { OrbitDataPanel, OrbitSummaryPanel } from "@/components/three-body/orbit-details";
 import { OrbitDrawing } from "@/components/three-body/orbit-drawing";
 import { OrbitPlayer } from "@/components/three-body/orbit-player";
 import { FAMILY_LABELS, ORBITS, SHAPE_SPHERE_NOTE, getOrbit } from "@/lib/orbits/catalog";
@@ -73,7 +73,11 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
           period={orbit.period}
           poster={<OrbitDrawing svg={summary.svg} label={`Recorrido completo de ${orbit.name}`} />}
         />
-        <OrbitDetails orbit={orbit} summary={summary} />
+        <OrbitSummaryPanel orbit={orbit} summary={summary} />
+      </div>
+
+      <div className="mt-14 border-t border-border/60 pt-10">
+        <OrbitDataPanel orbit={orbit} />
       </div>
     </main>
   );

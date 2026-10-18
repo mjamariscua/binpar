@@ -56,7 +56,8 @@ export function OrbitPlayer({
     <section aria-label={`Simulación de ${name}`} className="flex flex-col gap-5">
       <ViewTransition name={`orbita-${slug}`} share="morph" default="none">
       <div
-        className="relative aspect-square w-full overflow-hidden rounded-xl border border-border sm:aspect-[4/3]"
+        // En escritorio, más apaisado: así los controles quedan dentro de la primera pantalla (a 1440×900 empezaban en y = 915).
+        className="relative aspect-square w-full overflow-hidden rounded-xl border border-border sm:aspect-[4/3] lg:aspect-[16/10]"
         style={{ background: SCENE_BACKGROUND }}
       >
         <div className="absolute inset-0">{poster}</div>
