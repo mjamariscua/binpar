@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppleMoon } from "@/components/gravity/apple-moon";
 import { Chapter, Prose } from "@/components/gravity/chapter";
+import { Experiment } from "@/components/gravity/experiment";
 import { HeroOrbits } from "@/components/gravity/hero-orbits";
 import { LiveFormula } from "@/components/gravity/live-formula";
 import { OrbitSandbox } from "@/components/gravity/orbit-sandbox";
@@ -58,9 +59,9 @@ export default function GravityPage() {
             un kilómetro por segundo y, mientras cae, la superficie se curva por debajo. Nunca llega.
           </p>
         </Prose>
-        <div className="mt-10">
+        <Experiment id="luna" question="¿Cuánto cae la Luna en un segundo?">
           <AppleMoon />
-        </div>
+        </Experiment>
         <Prose>
           <p className="mt-10">
             Newton hizo esta cuenta: la Luna está unas 60 veces más lejos del centro de la Tierra que la manzana, y
@@ -85,9 +86,9 @@ export default function GravityPage() {
             la ley. Toca los símbolos.
           </p>
         </Prose>
-        <div className="mt-10">
+        <Experiment id="formula" question="¿De qué depende la fuerza con que se atraen?">
           <LiveFormula />
-        </div>
+        </Experiment>
         <Prose>
           <ul className="mt-10 list-disc space-y-2 pl-5">
             <li>Duplica una masa: la fuerza se duplica.</li>
@@ -108,9 +109,9 @@ export default function GravityPage() {
             curva de la Tierra. Pruébalo con un satélite lanzado a un radio terrestre de altura.
           </p>
         </Prose>
-        <div className="mt-10">
+        <Experiment id="satelite" question="¿A qué velocidad hay que lanzarlo para que no caiga?">
           <OrbitSandbox />
-        </div>
+        </Experiment>
         <Prose>
           <p className="mt-10">
             Para una órbita circular, la gravedad tiene que aportar justo la fuerza que curva la trayectoria. Para
