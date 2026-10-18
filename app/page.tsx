@@ -7,13 +7,7 @@ import { LiveFormula } from "@/components/gravity/live-formula";
 import { OrbitSandbox } from "@/components/gravity/orbit-sandbox";
 import { Tex } from "@/components/gravity/tex";
 import { TutorSection } from "@/components/tutor/tutor-section";
-
-const CHAPTERS = [
-  { id: "manzana-y-luna", title: "La manzana y la Luna" },
-  { id: "la-formula", title: "La fórmula, viva" },
-  { id: "lanzar", title: "Lanzar un satélite" },
-  { id: "tutor", title: "Ponte a prueba" },
-] as const;
+import { CHAPTERS } from "@/lib/chapters";
 
 /**
  * Parte A: la ley de gravitación universal en cuatro capítulos que se leen
