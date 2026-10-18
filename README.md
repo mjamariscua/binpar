@@ -187,6 +187,6 @@ partir de mediciones y están documentadas arriba.
 
 ---
 
-© 2026. Todos los derechos reservados. Código entregado exclusivamente para
-evaluación en el proceso de selección de BinPar; no se concede licencia de uso,
-copia ni distribución.
+© 2026 Michael Amariscua. Todos los derechos reservados. Código entregado
+exclusivamente para evaluación en el proceso de selección de BinPar; no se
+concede licencia de uso, copia ni distribución.
