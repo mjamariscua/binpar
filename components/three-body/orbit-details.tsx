@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ScrollX } from "@/components/ui/scroll-x";
 import type { Citation, PeriodicOrbit } from "@/lib/orbits/catalog";
 import { BODY_COLORS } from "@/lib/orbits/colors";
 import type { OrbitSummary } from "@/lib/orbits/summary";
@@ -37,8 +38,8 @@ export function OrbitDetails({ orbit, summary }: { orbit: PeriodicOrbit; summary
       </Section>
 
       <Section title="Condiciones iniciales">
-        <div className="overflow-x-auto">
-          <table className="w-full font-mono text-xs tabular-nums">
+        <ScrollX label="Condiciones iniciales (se desplaza en horizontal)">
+          <table className="w-full font-mono text-sm tabular-nums">
             <caption className="sr-only">Posición y velocidad de cada cuerpo en t = 0</caption>
             <thead className="text-left text-muted-foreground">
               <tr>
@@ -70,7 +71,7 @@ export function OrbitDetails({ orbit, summary }: { orbit: PeriodicOrbit; summary
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
         {orbit.family === "suvakov-2013" && (
           <p className="mt-3 text-muted-foreground">
             Configuración colineal isósceles: cuerpos en (−1, 0), (1, 0) y (0, 0); los dos exteriores con
