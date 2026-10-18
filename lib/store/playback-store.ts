@@ -23,7 +23,7 @@ interface PlaybackStore {
   seek: (slug: OrbitSlug, time: number, period: number) => void;
   togglePlaying: (slug: OrbitSlug) => void;
   setSpeed: (slug: OrbitSlug, speed: Speed) => void;
-  reset: (slug: OrbitSlug) => void;
+  reset: (slug: OrbitSlug, period: number) => void;
 }
 
 export const usePlaybackStore = create<PlaybackStore>()((set) => {
@@ -40,7 +40,9 @@ export const usePlaybackStore = create<PlaybackStore>()((set) => {
     seek: (slug, time, period) => update(slug, (p) => seek(p, time, period)),
     togglePlaying: (slug) => update(slug, (p) => ({ ...p, playing: !p.playing })),
     setSpeed: (slug, speed) => update(slug, (p) => ({ ...p, speed })),
-    reset: (slug) => update(slug, () => INITIAL_PLAYBACK),
+    // Vuelve a t = 0 sin cambiar si está en pausa ni la velocidad: con «reducir
+    // movimiento», reiniciar no debe poner nada en marcha.
+    reset: (slug, period) => update(slug, (p) => seek(p, 0, period)),
   };
 });
 

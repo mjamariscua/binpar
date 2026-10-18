@@ -29,7 +29,7 @@ export function PlaybackControls({ slug, period }: { slug: OrbitSlug; period: nu
         <Button size="icon" onClick={() => togglePlaying(slug)} aria-label={playing ? "Pausar" : "Reproducir"}>
           {playing ? <Pause /> : <Play />}
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => reset(slug)} aria-label="Reiniciar desde t = 0">
+        <Button variant="ghost" size="icon" onClick={() => reset(slug, period)} aria-label="Reiniciar desde t = 0">
           <RotateCcw />
         </Button>
         <Slider
