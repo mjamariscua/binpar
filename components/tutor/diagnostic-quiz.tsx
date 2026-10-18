@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DIAGNOSTIC, type DiagnosticAnswers } from "@/lib/tutor/diagnostic";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,19 @@ export function DiagnosticQuiz({ onDone }: { onDone: (answers: DiagnosticAnswers
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
   const legendId = useId();
+  const legendRef = useRef<HTMLLegendElement>(null);
+  const firstQuestion = useRef(true);
   const question = DIAGNOSTIC[index];
+
+  // Al pasar de pregunta, el botón enfocado se deshabilita (no hay opción
+  // elegida) y el foco caería al body: pasa al enunciado nuevo, que así se lee.
+  useEffect(() => {
+    if (firstQuestion.current) {
+      firstQuestion.current = false;
+      return;
+    }
+    legendRef.current?.focus();
+  }, [index]);
   const isLast = index === DIAGNOSTIC.length - 1;
 
   const next = () => {
@@ -41,11 +53,11 @@ export function DiagnosticQuiz({ onDone }: { onDone: (answers: DiagnosticAnswers
         else if (selected !== null) setChecked(true);
       }}
     >
-      <p className="font-mono text-xs text-muted-foreground">
+      <p className="font-mono text-sm text-muted-foreground">
         Pregunta {index + 1} de {DIAGNOSTIC.length} · antes de empezar, para saber de dónde partes
       </p>
       <fieldset aria-describedby={checked ? `${legendId}-feedback` : undefined} className="flex flex-col gap-3">
-        <legend id={legendId} className="mb-3 text-lg">
+        <legend id={legendId} ref={legendRef} tabIndex={-1} className="mb-3 text-lg outline-none">
           {question.question}
         </legend>
         {question.options.map((option, i) => (
@@ -68,15 +80,18 @@ export function DiagnosticQuiz({ onDone }: { onDone: (answers: DiagnosticAnswers
               className="accent-primary"
             />
             <span>{option.text}</span>
-            {checked && option.correct && <span className="ml-auto text-xs text-emerald-300">Correcta</span>}
+            {checked && option.correct && <span className="ml-auto text-sm text-emerald-300">Correcta</span>}
           </label>
         ))}
       </fieldset>
-      {checked && selected !== null && (
-        <p id={`${legendId}-feedback`} role="status" className="rounded-lg bg-muted px-4 py-3 text-sm">
-          {question.options[selected].feedback}
-        </p>
-      )}
+      {/* Región viva estable: si se montara ya con el texto, podría no anunciarse. */}
+      <div aria-live="polite">
+        {checked && selected !== null && (
+          <p id={`${legendId}-feedback`} className="rounded-lg bg-muted px-4 py-3">
+            {question.options[selected].feedback}
+          </p>
+        )}
+      </div>
       <Button type="submit" disabled={selected === null} className="self-start">
         {!checked ? "Comprobar" : isLast ? "Terminar" : "Siguiente"}
       </Button>
