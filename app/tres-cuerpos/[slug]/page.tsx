@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { OrbitDataPanel, OrbitSummaryPanel } from "@/components/three-body/orbit-details";
 import { OrbitDrawing } from "@/components/three-body/orbit-drawing";
 import { OrbitPlayer } from "@/components/three-body/orbit-player";
-import { FAMILY_LABELS, ORBITS, SHAPE_SPHERE_NOTE, getOrbit } from "@/lib/orbits/catalog";
+import { FAMILY_LABELS, ORBITS, getOrbit } from "@/lib/orbits/catalog";
 import { summarizeOrbit } from "@/lib/orbits/summary";
 
 /** Enlaces de navegación entre órbitas: 44 px de alto en pantallas táctiles. */
@@ -56,9 +56,6 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
         </p>
         <h1 className="mt-1 font-heading text-5xl sm:text-7xl">{orbit.name}</h1>
         <p className="mt-3 max-w-prose text-lg text-muted-foreground">{orbit.summary}</p>
-        {orbit.family === "suvakov-2013" && (
-          <p className="mt-2 max-w-prose text-sm text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>
-        )}
       </header>
 
       {/*

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ScrollX } from "@/components/ui/scroll-x";
-import type { Citation, PeriodicOrbit } from "@/lib/orbits/catalog";
+import { SHAPE_SPHERE_NOTE, type Citation, type PeriodicOrbit } from "@/lib/orbits/catalog";
 import { BODY_COLORS } from "@/lib/orbits/colors";
 import type { OrbitSummary } from "@/lib/orbits/summary";
 import { formatInteger, formatScientific, formatValue } from "@/lib/format";
@@ -24,6 +24,8 @@ export function OrbitSummaryPanel({ orbit, summary }: { orbit: PeriodicOrbit; su
           completo; la estela, lo que cada cuerpo acaba de recorrer. Solo los mueve la atracción entre ellos, y al
           cabo de un periodo vuelven exactamente a donde empezaron: por eso la coreografía se repite.
         </p>
+        {/* Antes iba bajo el título y empujaba los controles fuera de la primera pantalla. */}
+        {orbit.family === "suvakov-2013" && <p className="mt-3 text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>}
       </Section>
 
       <Section title="Magnitudes">
