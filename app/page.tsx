@@ -9,6 +9,25 @@ import { Tex } from "@/components/gravity/tex";
 import { TutorSection } from "@/components/tutor/tutor-section";
 import { CHAPTERS } from "@/lib/chapters";
 
+/** Cierre de la Parte A: una idea por experimento, antes de pasar a tres cuerpos. */
+const TAKEAWAYS = [
+  {
+    label: "Capítulo 1",
+    title: "Lo que hace caer la manzana sujeta a la Luna",
+    text: "Es la misma atracción, y se debilita con el cuadrado de la distancia: el doble de lejos, la cuarta parte.",
+  },
+  {
+    label: "Capítulo 2",
+    title: "F = G·m₁·m₂/r²",
+    text: "La fuerza crece con cada masa y decrece con el cuadrado de la distancia. La Tierra tira de la Luna tanto como la Luna de la Tierra.",
+  },
+  {
+    label: "Capítulo 3",
+    title: "Una órbita es una caída",
+    text: "Un satélite cae todo el rato, pero avanza tan deprisa de lado que el suelo se curva por debajo. Un poco más rápido, y escapa.",
+  },
+] as const;
+
 /**
  * Parte A: la ley de gravitación universal en cuatro capítulos que se leen
  * con scroll. Cada uno añade una idea y un experimento; el último junta todo
@@ -139,8 +158,25 @@ export default function GravityPage() {
         <TutorSection />
       </Chapter>
 
-      <footer className="border-t border-border/60 py-20">
-        <h2 className="font-heading text-4xl sm:text-5xl">¿Y si son tres?</h2>
+      <section aria-labelledby="resumen-titulo" className="border-t border-border/60 py-16 sm:py-24">
+        <h2 id="resumen-titulo" className="font-heading text-4xl text-balance sm:text-6xl">
+          Lo que te llevas
+        </h2>
+        <ul className="mt-10 grid gap-4 md:grid-cols-3">
+          {TAKEAWAYS.map((t) => (
+            <li key={t.title} className="rounded-2xl border border-border bg-card p-6 shadow-card">
+              <p className="font-mono text-sm text-primary">{t.label}</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight">{t.title}</h3>
+              <p className="mt-3 text-muted-foreground">{t.text}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="tres-titulo" className="border-t border-border/60 py-20">
+        <h2 id="tres-titulo" className="font-heading text-4xl sm:text-5xl">
+          ¿Y si son tres?
+        </h2>
         <p className="mt-4 max-w-prose text-lg text-muted-foreground">
           Con dos cuerpos, la ley da una solución exacta. Con tres, no existe ninguna fórmula general; solo
           coreografías concretas que se repiten.
@@ -152,7 +188,7 @@ export default function GravityPage() {
         >
           Ver la galería de tres cuerpos →
         </Link>
-      </footer>
+      </section>
     </main>
   );
 }
