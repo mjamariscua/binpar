@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, ViewTransition } from "react";
 import { Segmented } from "@/components/ui/segmented";
-import { FAMILY_LABELS, type OrbitFamily, type OrbitSlug } from "@/lib/orbits/catalog";
+import type { OrbitFamily, OrbitSlug } from "@/lib/orbits/catalog";
 import type { OrbitSummary } from "@/lib/orbits/summary";
 import { matchesFilter, useGalleryStore, type GalleryFilter } from "@/lib/store/gallery-store";
 import { LiveThumbnail } from "./live-thumbnail";
@@ -18,10 +18,12 @@ export interface GalleryItem {
   readonly svg: OrbitSummary["svg"];
 }
 
+// En lenguaje llano: «Šuvakov y Dmitrašinović (2013)» no dice nada a quien no
+// es del campo. Los autores siguen en la ficha de cada órbita.
 const FILTERS: readonly { value: GalleryFilter; label: string }[] = [
   { value: "todas", label: "Todas" },
-  { value: "clasica", label: FAMILY_LABELS.clasica },
-  { value: "suvakov-2013", label: FAMILY_LABELS["suvakov-2013"] },
+  { value: "clasica", label: "Clásicas (1772 y 1993)" },
+  { value: "suvakov-2013", label: "Halladas por ordenador (2013)" },
 ];
 
 export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
@@ -75,10 +77,10 @@ export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
               <div className="mt-4 flex items-baseline justify-between gap-3">
                 <h3 className="text-xl font-semibold tracking-tight">{item.name}</h3>
                 {item.classification && (
-                  <span className="font-mono text-xs text-muted-foreground">{item.classification}</span>
+                  <span className="font-mono text-sm text-muted-foreground">{item.classification}</span>
                 )}
               </div>
-              <p className="mt-1 font-mono text-xs text-muted-foreground">T = {item.period.toFixed(4)}</p>
+              <p className="mt-1 font-mono text-sm text-muted-foreground">T = {item.period.toFixed(4)}</p>
               <p className="mt-3 text-sm text-muted-foreground">{item.summary}</p>
             </Link>
           </li>

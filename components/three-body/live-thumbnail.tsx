@@ -28,6 +28,10 @@ const SEGMENT_OPACITY = [0.12, 0.3, 0.55, 0.95];
  * directamente (sin renders de React). La trayectoria sale del mismo worker y
  * la misma caché que el detalle: al abrir una órbita desde la galería, ya está
  * calculada.
+ *
+ * La trayectoria se pide la primera vez que la tarjeta entra en pantalla, no al
+ * cargar la galería: en un móvil modesto, calcular las seis a la vez competía
+ * con la primera interacción.
  */
 export function LiveThumbnail({ slug, name, svg }: { slug: OrbitSlug; name: string; svg: OrbitSummary["svg"] }) {
   const autoplay = useAutoplay();
@@ -40,57 +44,63 @@ export function LiveThumbnail({ slug, name, svg }: { slug: OrbitSlug; name: stri
     let frame = 0;
     let visible = false;
     let cancelled = false;
+    let requested = false;
     let draw: ((now: number) => void) | null = null;
 
     const loop = (now: number) => {
       draw?.(now);
       frame = requestAnimationFrame(loop);
     };
+    const start = () => {
+      requested = true;
+      loadTrajectory(slug)
+        .then((trajectory) => {
+          if (cancelled) return;
+          const dots = [...node.querySelectorAll<SVGCircleElement>("circle")];
+          const segments = [...node.querySelectorAll<SVGPathElement>("path")];
+          const state = new Float64Array(trajectory.bodyCount * STRIDE);
+          const xy = BODY_COLORS.map(() => new Float64Array(TRAIL_POINTS * 2));
+          const span = trajectory.period * TRAIL_FRACTION;
+          const perSegment = Math.ceil(TRAIL_POINTS / SEGMENT_OPACITY.length);
+
+          draw = (now) => {
+            // Reloj global: todas las miniaturas avanzan a 1 periodo cada SECONDS_PER_PERIOD.
+            const time = ((now / 1000 / SECONDS_PER_PERIOD) * trajectory.period) % trajectory.period;
+            for (let i = 0; i < TRAIL_POINTS; i++) {
+              stateAt(trajectory, time - span + (span * i) / (TRAIL_POINTS - 1), state);
+              for (let b = 0; b < 3; b++) {
+                xy[b][i * 2] = state[b * STRIDE];
+                xy[b][i * 2 + 1] = -state[b * STRIDE + 1]; // en SVG el eje y apunta hacia abajo
+              }
+            }
+            for (let b = 0; b < 3; b++) {
+              dots[b]?.setAttribute("cx", xy[b][(TRAIL_POINTS - 1) * 2].toFixed(3));
+              dots[b]?.setAttribute("cy", xy[b][(TRAIL_POINTS - 1) * 2 + 1].toFixed(3));
+              SEGMENT_OPACITY.forEach((_, s) => {
+                const from = s * perSegment;
+                const to = Math.min(TRAIL_POINTS - 1, (s + 1) * perSegment);
+                let d = "";
+                for (let i = from; i <= to; i++) d += `${i === from ? "M" : "L"}${xy[b][i * 2].toFixed(3)} ${xy[b][i * 2 + 1].toFixed(3)}`;
+                segments[b * SEGMENT_OPACITY.length + s]?.setAttribute("d", d);
+              });
+            }
+          };
+          setLive(true);
+          if (visible) frame = requestAnimationFrame(loop);
+        })
+        .catch(() => {
+          // Sin worker la miniatura sigue siendo el dibujo estático: no hay nada que mostrar como error.
+        });
+    };
+
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry?.isIntersecting ?? false;
       cancelAnimationFrame(frame);
-      if (visible && draw) frame = requestAnimationFrame(loop);
+      if (!visible) return;
+      if (draw) frame = requestAnimationFrame(loop);
+      else if (!requested) start();
     });
     observer.observe(node);
-
-    loadTrajectory(slug)
-      .then((trajectory) => {
-        if (cancelled) return;
-        const dots = [...node.querySelectorAll<SVGCircleElement>("circle")];
-        const segments = [...node.querySelectorAll<SVGPathElement>("path")];
-        const state = new Float64Array(trajectory.bodyCount * STRIDE);
-        const xy = BODY_COLORS.map(() => new Float64Array(TRAIL_POINTS * 2));
-        const span = trajectory.period * TRAIL_FRACTION;
-        const perSegment = Math.ceil(TRAIL_POINTS / SEGMENT_OPACITY.length);
-
-        draw = (now) => {
-          // Reloj global: todas las miniaturas avanzan a 1 periodo cada SECONDS_PER_PERIOD.
-          const time = ((now / 1000 / SECONDS_PER_PERIOD) * trajectory.period) % trajectory.period;
-          for (let i = 0; i < TRAIL_POINTS; i++) {
-            stateAt(trajectory, time - span + (span * i) / (TRAIL_POINTS - 1), state);
-            for (let b = 0; b < 3; b++) {
-              xy[b][i * 2] = state[b * STRIDE];
-              xy[b][i * 2 + 1] = -state[b * STRIDE + 1]; // en SVG el eje y apunta hacia abajo
-            }
-          }
-          for (let b = 0; b < 3; b++) {
-            dots[b]?.setAttribute("cx", xy[b][(TRAIL_POINTS - 1) * 2].toFixed(3));
-            dots[b]?.setAttribute("cy", xy[b][(TRAIL_POINTS - 1) * 2 + 1].toFixed(3));
-            SEGMENT_OPACITY.forEach((_, s) => {
-              const from = s * perSegment;
-              const to = Math.min(TRAIL_POINTS - 1, (s + 1) * perSegment);
-              let d = "";
-              for (let i = from; i <= to; i++) d += `${i === from ? "M" : "L"}${xy[b][i * 2].toFixed(3)} ${xy[b][i * 2 + 1].toFixed(3)}`;
-              segments[b * SEGMENT_OPACITY.length + s]?.setAttribute("d", d);
-            });
-          }
-        };
-        setLive(true);
-        if (visible) frame = requestAnimationFrame(loop);
-      })
-      .catch(() => {
-        // Sin worker la miniatura sigue siendo el dibujo estático: no hay nada que mostrar como error.
-      });
 
     return () => {
       cancelled = true;

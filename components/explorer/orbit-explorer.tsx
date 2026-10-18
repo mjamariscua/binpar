@@ -84,7 +84,7 @@ export function OrbitExplorer() {
           >
             <Crosshair /> {busy.refine ? "Refinando…" : "Refinar cerca de aquí"}
           </Button>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Busca unos (vx, vy) cercanos que vuelvan mejor, cerca del mismo instante de retorno (método de Nelder–Mead,
             unas 80 órbitas integradas).
           </p>
@@ -278,7 +278,7 @@ function ReturnMeter({ search }: { search: SearchView | null }) {
       >
         <div className={cn("h-full rounded-full transition-[width] duration-300", tone)} style={{ width: `${fill * 100}%` }} />
       </div>
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground">
+      <div className="mt-1 flex justify-between font-mono text-xs text-muted-foreground">
         <span>1</span>
         <span>10⁻³</span>
         <span>10⁻⁶</span>

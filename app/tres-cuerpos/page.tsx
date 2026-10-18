@@ -30,6 +30,9 @@ export default function ThreeBodyGalleryPage() {
         siempre. Aun así, hay posiciones y velocidades iniciales exactas con las que repiten la
         misma coreografía una y otra vez. Estas son seis.
       </p>
+      <p className="mt-2 max-w-prose text-muted-foreground">
+        En cada tarjeta, la línea tenue es el recorrido completo y los puntos de color, los tres cuerpos moviéndose.
+      </p>
       <OrbitGallery items={items} />
       <aside className="mt-16 flex flex-col gap-4 rounded-2xl border border-primary/40 bg-primary/5 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
