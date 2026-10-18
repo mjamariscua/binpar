@@ -125,34 +125,78 @@ function Num({ children }: { children: ReactNode }) {
   return <span className="font-mono tabular-nums">{children}</span>;
 }
 
+/** Lee «0,46» o «0.46»; null si no es un número dentro de los límites. */
+function parseVelocity(text: string): number | null {
+  const v = Number(text.trim().replace(",", "."));
+  if (text.trim() === "" || !Number.isFinite(v)) return null;
+  return v >= VELOCITY_LIMITS.min && v <= VELOCITY_LIMITS.max ? v : null;
+}
+
+/**
+ * Campo y slider de una velocidad. Mientras se escribe, el texto es local (se
+ * puede borrar entero o dejar a medias); se aplica con Intro o al salir del
+ * campo, y Escape lo descarta. Un valor no válido se marca al intentar
+ * aplicarlo y no cambia nada.
+ */
 function VelocityControl({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   const id = useId();
-  const clamp = (v: number) => Math.min(VELOCITY_LIMITS.max, Math.max(VELOCITY_LIMITS.min, v));
+  const hintId = useId();
+  const [draft, setDraft] = useState<string | null>(null);
+  // Se marca al intentar aplicar un valor no válido, no mientras se escribe.
+  const [invalid, setInvalid] = useState(false);
+
+  const commit = () => {
+    if (draft === null) return;
+    const v = parseVelocity(draft);
+    if (v === null) {
+      setInvalid(true);
+      return;
+    }
+    onChange(v);
+    setDraft(null);
+    setInvalid(false);
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-3 text-sm">
         <label htmlFor={id}>{label}</label>
         <input
           id={id}
-          type="number"
+          type="text"
           inputMode="decimal"
-          step={0.000001}
-          min={VELOCITY_LIMITS.min}
-          max={VELOCITY_LIMITS.max}
-          value={Number(value.toFixed(7))}
+          autoComplete="off"
+          value={draft ?? String(Number(value.toFixed(7)))}
+          aria-invalid={invalid}
+          aria-describedby={hintId}
           onChange={(e) => {
-            const v = Number(e.target.value);
-            if (Number.isFinite(v)) onChange(clamp(v));
+            setDraft(e.target.value);
+            setInvalid(false);
           }}
-          className="w-32 rounded-md border border-input bg-transparent px-2 py-1 text-right font-mono text-sm tabular-nums"
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") {
+              setDraft(null);
+              setInvalid(false);
+            }
+          }}
+          className="w-32 rounded-md border border-input bg-transparent px-2 py-1 text-right font-mono text-base tabular-nums aria-invalid:border-destructive sm:text-sm pointer-coarse:min-h-11"
         />
       </div>
+      <p id={hintId} className={cn("text-sm", invalid ? "text-destructive" : "sr-only")}>
+        Un número entre {VELOCITY_LIMITS.min} y {VELOCITY_LIMITS.max}; se aplica con Intro o al salir del campo.
+      </p>
       <Slider
         value={[value]}
         min={VELOCITY_LIMITS.min}
         max={VELOCITY_LIMITS.max}
         step={0.0005}
-        onValueChange={([v]) => onChange(v)}
+        onValueChange={([v]) => {
+          setDraft(null);
+          setInvalid(false);
+          onChange(v);
+        }}
         thumbProps={{ "aria-label": label, "aria-valuetext": value.toFixed(4) }}
       />
     </div>
