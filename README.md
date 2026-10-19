@@ -50,6 +50,12 @@ Ninguna es obligatoria. Copia `.env.example` a `.env.local` (desarrollo) o a
 capítulo del tutor y experimentos guiados con explicaciones escritas de
 antemano. Nunca se simulan respuestas de un modelo.
 
+**La demo pública** usa Google `gemini-3.5-flash-lite` en el nivel gratuito
+(`GOOGLE_GENERATIVE_AI_API_KEY` y `LLM_MODEL` en Vercel). Su cuota diaria es
+limitada: si se agota, el chat lo dice y deja reintentar. Si tu clave falla,
+el chat indica qué revisar: clave rechazada o modelo no disponible (en ese
+caso, prueba otro con `LLM_MODEL`).
+
 ## Qué hay dentro
 
 ### Parte A — la experiencia de aprendizaje
@@ -142,6 +148,10 @@ scripts/                   informes reproducibles de las órbitas
   peticiones, explorador (recupera los valores de Li & Liao partiendo de los
   5 dígitos originales de Moth I) y la **API del tutor de punta a punta con
   `MockLanguageModelV4`**.
+- **Tutor con un proveedor real**: probado en producción con Google
+  `gemini-3.5-flash-lite`. Responde en streaming, usa las herramientas (por
+  ejemplo, duplica la distancia en el laboratorio) y devuelve una pregunta.
+  Con Anthropic y OpenAI solo se ha probado con el modelo simulado.
 - **Informes reproducibles**: `pnpm orbits:report` y `pnpm orbits:sources`
   generan las tablas de [docs/orbitas.md](docs/orbitas.md).
 - **Accesibilidad**: auditoría con axe-core 4.14 (WCAG 2.1 AA y buenas
@@ -170,12 +180,6 @@ partir de mediciones y están documentadas arriba.
 
 ## Límites conocidos
 
-- **Tutor con un LLM real:** la ruta está probada de punta a punta con un
-  modelo simulado, y el chat en el navegador con respuestas interceptadas
-  (herramientas, reenvío automático, formato). En el entorno de desarrollo no
-  había claves, así que no se ha conversado con un proveedor real. Si tu clave
-  falla, el chat dice qué revisar: clave rechazada o modelo no disponible (en
-  ese caso, prueba otro con `LLM_MODEL`).
 - **Modelos por defecto:** elegidos como los rápidos de cada proveedor según
   los tipos de los SDK instalados; una clave concreta puede no tener acceso a
   alguno.
