@@ -202,6 +202,11 @@ partir de mediciones y están documentadas arriba.
 
 ---
 
+<table>
+  <tr>
+ <td align="center"> <img src="https://github.com/mjamariscua.png?s=100" width="100px;" alt=""/> <br /> <sub> <b> <a href="https://github.com/mjamariscua"> Michael Amariscua (mjamariscua) </a></b></sub><br /></td>     </tr>
+</table>
+
 © 2026 Michael Amariscua. Todos los derechos reservados. Código entregado
 exclusivamente para evaluación en el proceso de selección de BinPar; no se
 concede licencia de uso, copia ni distribución.
