@@ -173,6 +173,20 @@ el orden de construcción por módulos; la implementación se hizo módulo a
 módulo, con commits por tema (llevan la coautoría de Claude) y una guía de
 estudio por módulo para revisar y entender cada archivo y cada decisión.
 
+Organicé el trabajo con agentes especializados, cada uno con una función
+distinta:
+
+- uno de **frontend**: interfaz, componentes y escenas;
+- uno de **backend**: API del tutor, proveedor de LLM y límite de peticiones;
+- uno de **arquitectura**: estructura de módulos, motor de física y
+  decisiones técnicas.
+
+Con el diseño terminado, un agente de **UX/UI** auditó la web contra las buenas
+prácticas de referencia (heurísticas de Nielsen, WCAG 2.2 AA, diseño móvil
+primero). Midió en el navegador de 320 a 1440 px, priorizó los problemas por
+su impacto y aplicó las mejoras en tres fases, con un commit por cambio y la
+verificación de cada fase en el navegador.
+
 La IA no sustituye la verificación: cada afirmación física está respaldada por
 un test o un informe reproducible, y las dos desviaciones del plan (la fuente
 de las condiciones iniciales y ViewTransition en lugar de Motion) se tomaron a
