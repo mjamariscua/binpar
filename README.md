@@ -21,7 +21,7 @@ Requisitos: Node ≥ 20.9 y pnpm 10 (`corepack enable`).
 ```bash
 pnpm install
 pnpm dev              # http://localhost:3000
-pnpm test             # 111 tests (física, órbitas, tutor, API, formato)
+pnpm test             # 140 tests (física, órbitas, trenza, tutor, API, formato)
 pnpm typecheck
 pnpm lint
 pnpm orbits:report    # cierre, energía y coste de cada órbita
@@ -87,8 +87,13 @@ dice en qué capítulo estás y deja saltar entre ellos.
 - **Detalle**: simulación con estelas, play/pausa, scrub, velocidad y reinicio
   (todo por teclado); panel con condiciones iniciales, periodo, energía,
   momento angular, **error de cierre medido** y fuentes.
-- **Estado conservado** al volver a la galería: filtro, scroll y foco en la
-  tarjeta abierta; y cada órbita recuerda su instante y su velocidad.
+- **Vista 2D | 3D** en la galería y en el detalle: en 3D, la órbita como
+  **trenza en el tiempo** (una hebra por cuerpo durante dos periodos, con el
+  corte del instante actual), la idea con la que Moore (1993) clasificó estas
+  órbitas. En el detalle se puede girar, con vistas fijas como alternativa
+  accesible, y la vista va en la URL (`?vista=3d`).
+- **Estado conservado** al volver a la galería: filtro, vista, scroll y foco en
+  la tarjeta abierta; y cada órbita recuerda su instante y su velocidad.
 - **Explorador**: eliges la velocidad inicial, se mide cuánto vuelve el sistema
   a su estado inicial y «refinar» busca la órbita periódica más cercana.
 
@@ -125,6 +130,9 @@ scripts/                   informes reproducibles de las órbitas
 | **Páginas estáticas con datos calculados al compilar** (SVG, E, L, cierre) | La galería no ejecuta física en el navegador para mostrarse; el detalle tiene póster inmediato | Peso del HTML; reducido 7× simplificando los trazos con Ramer–Douglas–Peucker (176 → 26 KB) |
 | **React Three Fiber** para escenas animadas, **SVG** para diagramas y miniaturas | WebGL donde hay animación continua y efectos; SVG donde importan el texto y la accesibilidad | three.js pesa; se carga con `React.lazy` solo donde hay escena |
 | **Tarjetas vivas en SVG** (no WebGL) | Seis contextos WebGL son caros y los navegadores los limitan; un bucle rAF por tarjeta, solo si está en pantalla | Estelas en tramos de opacidad (SVG no degrada a lo largo de un trazo) |
+| **3D como trenza en el tiempo**, no como física 3D | Las seis órbitas son planas: una física 3D (unos 15 archivos) no cambiaría nada visible. Con el tiempo como tercera dimensión, la periodicidad se ve como una trenza que se repite. Sale del periodo ya precomputado, sin física nueva | Se dibuja la trenza, pero no se calcula su «palabra de trenza» (la clasificación de Moore) |
+| **Trenza de las tarjetas en SVG proyectado**; WebGL solo en el detalle | Misma razón que las tarjetas vivas; la proyección y la simplificación se hacen en el servidor | Las tarjetas no se pueden girar; ≈ 10 KB comprimidos más en el payload de la galería |
+| **Girar la trenza con el dedo solo tras activarlo** | OrbitControls pone `touch-action: none` en el canvas y bloquearía el scroll de la página en móvil | En táctil, un toque más para girar; las vistas fijas funcionan siempre |
 | **Estado del laboratorio compartido** por persona y tutor (zustand, mismas acciones) | El tutor no tiene un camino propio: solo puede hacer lo que permite la interfaz | Estado global de módulo (vive mientras la pestaña) |
 | **Herramientas del tutor ejecutadas en el cliente** (sin `execute` en el servidor) | Lo que cambian es la interfaz; el navegador devuelve al modelo los datos reales | Cada respuesta con herramienta son 2–3 peticiones |
 | **Proveedor autodetectado** y **modelo rápido** por defecto | El equipo revisará con su clave, sea cual sea; en un chat pesa la latencia | Algo menos de calidad que un modelo grande (`LLM_MODEL` lo cambia) |
@@ -141,9 +149,10 @@ scripts/                   informes reproducibles de las órbitas
 
 ## Verificación
 
-- **111 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
+- **140 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
   cierre y conservación de energía de **cada órbita**, comparación de fuentes,
-  clasificación de órbitas, cifras Tierra–Luna, descripciones de la galería
+  clasificación de órbitas, la trenza (cada hebra vuelve a su posición en T y
+  en 2T, proyecciones y encuadre de cámara), cifras Tierra–Luna, descripciones de la galería
   (sus afirmaciones se comprueban), diagnóstico, proveedor, límite de
   peticiones, explorador (recupera los valores de Li & Liao partiendo de los
   5 dígitos originales de Moth I) y la **API del tutor de punta a punta con

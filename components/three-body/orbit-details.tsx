@@ -24,6 +24,11 @@ export function OrbitSummaryPanel({ orbit, summary }: { orbit: PeriodicOrbit; su
           completo; la estela, lo que cada cuerpo acaba de recorrer. Solo los mueve la atracción entre ellos, y al
           cabo de un periodo vuelven exactamente a donde empezaron: por eso la coreografía se repite.
         </p>
+        <p className="mt-3 text-muted-foreground">
+          En la vista 3D, el tiempo es la tercera dimensión: cada cuerpo dibuja una hebra y la órbita periódica, una
+          trenza que se repite cada periodo. Así clasificó Moore (1993) estas órbitas, y buscando una trenza concreta
+          encontró la figura de ocho.
+        </p>
         {/* Antes iba bajo el título y empujaba los controles fuera de la primera pantalla. */}
         {orbit.family === "suvakov-2013" && <p className="mt-3 text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>}
       </Section>
