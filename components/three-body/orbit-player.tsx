@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useId, useState, useSyncExternalStore, ViewT
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
-import type { BraidViewName, OrbitView } from "@/lib/orbits/braid";
+import { parseView, type BraidViewName, type OrbitView } from "@/lib/orbits/braid";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
 import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import { useCoarsePointer } from "@/lib/hooks/use-coarse-pointer";
@@ -76,6 +76,24 @@ export function OrbitPlayer({
   const viewLabelId = useId();
   const cameraLabelId = useId();
   const is3D = view === "3d";
+
+  // La URL manda al abrir: un enlace con ?vista=3d abre la órbita en 3D. Se
+  // lee de window.location y no con useSearchParams, que en esta ruta
+  // estática obligaría a envolver el reproductor en un Suspense y lo sacaría
+  // del HTML del servidor. Coste: con ?vista=3d se ve un instante el póster 2D.
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("vista");
+    if (param !== null) setView(parseView(param));
+  }, [setView]);
+
+  // Y la URL sigue a la vista elegida, para poder compartirla. replaceState y
+  // no pushState: cambiar de vista no debe llenar el historial del botón «atrás».
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (view === "3d") url.searchParams.set("vista", "3d");
+    else url.searchParams.delete("vista");
+    if (url.href !== window.location.href) window.history.replaceState(null, "", url);
+  }, [view]);
 
   // Con «reducir movimiento», una órbita que se abre por primera vez empieza en
   // pausa: el movimiento lo decide la persona con el botón de reproducir.
@@ -163,7 +181,7 @@ export function OrbitPlayer({
           <p className="max-w-prose text-sm text-muted-foreground">
             El tiempo avanza a lo largo de la trenza: cada hebra es un cuerpo y el corte translúcido, el instante actual.
             {coarse ? " Activa «Girar con el dedo» para girarla" : " Arrastra para girarla"}, o elige una vista. «De frente»
-            mira a lo largo del tiempo y muestra la órbita igual que en 2D.
+            mira a lo largo del tiempo, como por un túnel: se reconoce el recorrido de la vista 2D.
           </p>
         </div>
       )}
