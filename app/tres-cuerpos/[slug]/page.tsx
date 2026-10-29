@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { OrbitDataPanel, OrbitSummaryPanel } from "@/components/three-body/orbit-details";
 import { OrbitDrawing } from "@/components/three-body/orbit-drawing";
 import { OrbitPlayer } from "@/components/three-body/orbit-player";
+import { ShapeDrawing } from "@/components/three-body/shape-drawing";
 import { FAMILY_LABELS, ORBITS, getOrbit } from "@/lib/orbits/catalog";
 import { summarizeOrbit } from "@/lib/orbits/summary";
 
@@ -71,6 +72,7 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
           masses={orbit.system.masses}
           poster={<OrbitDrawing svg={summary.svg} label={`Recorrido completo de ${orbit.name}`} />}
           braidPoster={<OrbitDrawing svg={summary.braid} label={`Trenza de ${orbit.name}: el tiempo avanza hacia la derecha`} />}
+          shapePoster={<ShapeDrawing shape={summary.shape} label={`${orbit.name} en la esfera de formas`} />}
         />
         <OrbitSummaryPanel orbit={orbit} summary={summary} />
       </div>

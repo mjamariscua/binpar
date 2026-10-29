@@ -225,12 +225,3 @@ export function sliceFrame(bounds: Bounds, x: number): number[] {
   // Z = x de la órbita, Y = y de la órbita.
   return [x, minY, minX, x, minY, maxX, x, maxY, maxX, x, maxY, minX];
 }
-
-/* ─── Vista de la galería y del detalle ─────────────────────────────────── */
-
-export type OrbitView = "2d" | "3d";
-
-/** Lee la vista de un parámetro de URL; cualquier otro valor es la vista 2D, la de siempre. */
-export function parseView(value: string | null | undefined): OrbitView {
-  return value === "3d" ? "3d" : "2d";
-}

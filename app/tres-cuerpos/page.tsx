@@ -13,7 +13,7 @@ export default function ThreeBodyGalleryPage() {
   // Se ejecuta al generar la página (es estática): el navegador recibe los
   // recorridos ya dibujados y no hace física para mostrar la galería.
   const items: GalleryItem[] = ORBITS.map((orbit) => {
-    const { svg, braid } = summarizeOrbit(orbit);
+    const { svg, braid, shape } = summarizeOrbit(orbit);
     return {
       slug: orbit.slug,
       name: orbit.name,
@@ -23,6 +23,7 @@ export default function ThreeBodyGalleryPage() {
       period: orbit.period,
       svg,
       braid,
+      shape,
     };
   });
 

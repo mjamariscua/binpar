@@ -10,13 +10,12 @@ import type { OrbitSlug } from "@/lib/orbits/catalog";
 import { BODY_COLORS, SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import {
   formatViewpoint,
-  parsePlayerView,
   parseViewpoint,
   type Gaze,
-  type PlayerView,
   type Viewpoint,
   type ViewpointParam,
 } from "@/lib/orbits/inside";
+import { parsePlayerView, type PlayerView } from "@/lib/orbits/views";
 import { useCoarsePointer } from "@/lib/hooks/use-coarse-pointer";
 import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
 import { useGalleryStore } from "@/lib/store/gallery-store";
@@ -34,6 +33,7 @@ const VIEWS: readonly { value: PlayerView; label: string; ariaLabel: string }[] 
   { value: "2d", label: "2D", ariaLabel: "2D: el recorrido en el plano" },
   { value: "3d", label: "3D", ariaLabel: "3D: la trenza en el tiempo" },
   { value: "dentro", label: "Dentro", ariaLabel: "Dentro: la órbita en primera persona" },
+  { value: "forma", label: "Forma", ariaLabel: "Forma: la esfera de formas del triángulo" },
 ];
 
 const VIEWPOINTS: readonly SegmentedOption<ViewpointParam>[] = [
@@ -93,6 +93,7 @@ export function OrbitPlayer({
   masses,
   poster,
   braidPoster,
+  shapePoster,
 }: {
   slug: OrbitSlug;
   name: string;
@@ -101,6 +102,7 @@ export function OrbitPlayer({
   masses: readonly number[];
   poster: ReactNode;
   braidPoster: ReactNode;
+  shapePoster: ReactNode;
 }) {
   const isClient = useIsClient();
   const { reducedMotion } = useVisualQuality();
@@ -121,6 +123,7 @@ export function OrbitPlayer({
   const gazeLabelId = useId();
   const is3D = view === "3d";
   const inside = view === "dentro";
+  const isShape = view === "forma";
 
   // La URL manda al abrir: un enlace con ?vista=3d abre la órbita en 3D, y
   // ?vista=dentro&desde=2, sobre el cuerpo 2. Se lee de window.location y no
@@ -160,8 +163,9 @@ export function OrbitPlayer({
         className="relative aspect-square w-full overflow-hidden rounded-xl border border-border sm:aspect-[4/3] lg:aspect-[16/10]"
         style={{ background: SCENE_BACKGROUND }}
       >
-        <div className="absolute inset-0">{is3D ? braidPoster : poster}</div>
-        {isClient && (
+        <div className="absolute inset-0">{is3D ? braidPoster : isShape ? shapePoster : poster}</div>
+        {/* En «Forma», por ahora, solo el dibujo estático: la escena de la esfera llega en el paso siguiente. */}
+        {isClient && !isShape && (
           <ErrorBoundary
             fallback={(retry) => (
               <StatusOverlay>

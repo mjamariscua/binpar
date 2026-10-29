@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, ViewTransition } from "react";
 import { Segmented } from "@/components/ui/segmented";
-import type { OrbitView } from "@/lib/orbits/braid";
 import type { OrbitFamily, OrbitSlug } from "@/lib/orbits/catalog";
 import type { OrbitSummary } from "@/lib/orbits/summary";
+import { galleryView, type OrbitView } from "@/lib/orbits/views";
 import { matchesFilter, useGalleryStore, type GalleryFilter } from "@/lib/store/gallery-store";
 import { LiveThumbnail } from "./live-thumbnail";
 
@@ -18,6 +18,7 @@ export interface GalleryItem {
   readonly period: number;
   readonly svg: OrbitSummary["svg"];
   readonly braid: OrbitSummary["braid"];
+  readonly shape: OrbitSummary["shape"];
 }
 
 // En lenguaje llano: «Šuvakov y Dmitrašinović (2013)» no dice nada a quien no
@@ -31,13 +32,22 @@ const FILTERS: readonly { value: GalleryFilter; label: string }[] = [
 const VIEWS: readonly { value: OrbitView; label: string; ariaLabel: string }[] = [
   { value: "2d", label: "2D", ariaLabel: "2D: el recorrido en el plano" },
   { value: "3d", label: "3D", ariaLabel: "3D: la trenza en el tiempo" },
+  { value: "forma", label: "Forma", ariaLabel: "Forma: la esfera de formas del triángulo" },
 ];
+
+/** Qué se ve en las tarjetas con cada vista. */
+const LEGENDS: Record<OrbitView, string> = {
+  "2d": "En cada tarjeta, la línea tenue es el recorrido completo y los puntos de color, los tres cuerpos moviéndose.",
+  "3d": "El tiempo avanza hacia la derecha: cada hebra es un cuerpo, y el triángulo, el instante actual. Cuando la trenza se repite, la órbita ha dado una vuelta.",
+  forma:
+    "Cada punto de la esfera es una forma del triángulo: en los polos, equilátero; en el ecuador, los tres alineados, y el color del arco dice qué cuerpo queda en medio. Los puntos partidos son choques de dos cuerpos: ninguna órbita los toca.",
+};
 
 export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
   const filter = useGalleryStore((s) => s.filter);
   const setFilter = useGalleryStore((s) => s.setFilter);
   // «Dentro» solo existe en el detalle: aquí se ve como 2D.
-  const view = useGalleryStore((s) => (s.view === "3d" ? "3d" : "2d"));
+  const view = useGalleryStore((s) => galleryView(s.view));
   const setView = useGalleryStore((s) => s.setView);
   const rememberExit = useGalleryStore((s) => s.rememberExit);
   const cards = useRef(new Map<OrbitSlug, HTMLAnchorElement>());
@@ -74,9 +84,7 @@ export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
         </div>
       </div>
       <p className="mt-3 max-w-prose text-muted-foreground">
-        {view === "2d"
-          ? "En cada tarjeta, la línea tenue es el recorrido completo y los puntos de color, los tres cuerpos moviéndose."
-          : "El tiempo avanza hacia la derecha: cada hebra es un cuerpo, y el triángulo, el instante actual. Cuando la trenza se repite, la órbita ha dado una vuelta."}
+        {LEGENDS[view]}
       </p>
 
       <p className="sr-only" aria-live="polite">
@@ -100,7 +108,14 @@ export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
               {/* Mismo `name` que el visor del detalle: el navegador transforma uno en otro al navegar. */}
               <ViewTransition name={`orbita-${item.slug}`} share="morph" default="none">
                 <div className="aspect-[4/3] w-full rounded-lg bg-background/60 p-3">
-                  <LiveThumbnail slug={item.slug} name={item.name} svg={item.svg} braid={item.braid} view={view} />
+                  <LiveThumbnail
+                    slug={item.slug}
+                    name={item.name}
+                    svg={item.svg}
+                    braid={item.braid}
+                    shape={item.shape}
+                    view={view}
+                  />
                 </div>
               </ViewTransition>
               <div className="mt-4 flex items-baseline justify-between gap-3">

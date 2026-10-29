@@ -3,29 +3,39 @@
 import { useEffect, useRef, useState } from "react";
 import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
-import { BRAID_PERIODS, BRAID_VIEWS, projectPoint, sliceFrame, sliceX, type OrbitView } from "@/lib/orbits/braid";
+import { BRAID_PERIODS, BRAID_VIEWS, projectPoint, sliceFrame, sliceX } from "@/lib/orbits/braid";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
 import { BODY_COLORS } from "@/lib/orbits/colors";
 import { loadTrajectory } from "@/lib/orbits/load-trajectory";
 import { SECONDS_PER_PERIOD } from "@/lib/orbits/playback";
+import { SHAPE_VIEW, projectSphere, shapePoint, viewAxes } from "@/lib/orbits/shape";
 import type { OrbitSummary } from "@/lib/orbits/summary";
+import type { OrbitView } from "@/lib/orbits/views";
 import { useAutoplay } from "@/lib/hooks/use-autoplay";
 import { cn } from "@/lib/utils";
 import { OrbitDrawing } from "./orbit-drawing";
+import { SHAPE_VIEWBOX, ShapeDrawing } from "./shape-drawing";
 
 /** Tramo del periodo que cubre la estela de cada cuerpo en la miniatura. */
 const TRAIL_FRACTION = 0.12;
 const TRAIL_POINTS = 36;
 /** La estela se dibuja en tramos de opacidad creciente: SVG no degrada la opacidad a lo largo de un trazo. */
 const SEGMENT_OPACITY = [0.12, 0.3, 0.55, 0.95];
+/** En la esfera, la estela cubre menos periodo: la curva da muchas vueltas y una estela larga las taparía. */
+const SHAPE_TRAIL_FRACTION = 0.06;
+/** En el reverso de la esfera, el punto y su estela se atenúan como el resto del dibujo. */
+const BACK_OPACITY = 0.4;
+const SHAPE_AXES = viewAxes(SHAPE_VIEW);
 
 /**
- * Miniatura viva de la galería, en dos vistas:
+ * Miniatura viva de la galería, en tres vistas:
  * - 2D: sobre el recorrido estático (SVG del servidor) se mueven los tres
  *   cuerpos con su estela.
  * - 3D: sobre la trenza proyectada (también del servidor) se mueve el corte
  *   del instante actual: su marco, los tres cuerpos y el triángulo que forman.
  *   Recorre los dos periodos dibujados y vuelve a empezar.
+ * - Forma: sobre la curva en la esfera de formas se mueve un punto, la forma
+ *   del triángulo en cada instante, con su estela.
  *
  * Sin WebGL: seis contextos WebGL en una página es caro y los navegadores los
  * limitan. Aquí basta con SVG y un bucle requestAnimationFrame por miniatura,
@@ -43,12 +53,14 @@ export function LiveThumbnail({
   name,
   svg,
   braid,
+  shape,
   view,
 }: {
   slug: OrbitSlug;
   name: string;
   svg: OrbitSummary["svg"];
   braid: OrbitSummary["braid"];
+  shape: OrbitSummary["shape"];
   view: OrbitView;
 }) {
   const autoplay = useAutoplay();
@@ -73,7 +85,12 @@ export function LiveThumbnail({
       loadTrajectory(slug)
         .then((trajectory) => {
           if (cancelled) return;
-          draw = view === "3d" ? braidAnimation(trajectory, node, braid) : planeAnimation(trajectory, node);
+          draw =
+            view === "3d"
+              ? braidAnimation(trajectory, node, braid)
+              : view === "forma"
+                ? shapeAnimation(trajectory, node)
+                : planeAnimation(trajectory, node);
           // Una vez ya: al cambiar de vista, los elementos nuevos no esperan al primer fotograma con la posición vacía.
           draw(performance.now());
           setLive(true);
@@ -100,21 +117,34 @@ export function LiveThumbnail({
     };
   }, [slug, autoplay, view, braid]);
 
-  const drawing = view === "3d" ? braid : svg;
-  const [, , width] = drawing.viewBox.split(" ").map(Number);
+  const viewBox = view === "forma" ? SHAPE_VIEWBOX : (view === "3d" ? braid : svg).viewBox;
+  const [, , width] = viewBox.split(" ").map(Number);
   const dotRadius = (width ?? 1) * (view === "3d" ? 0.012 : 0.016);
+  // En 3D y en la esfera, el dibujo estático es la información: se atenúa menos que el recorrido en 2D.
+  const dimmed = cn("transition-opacity duration-700", live && (view === "2d" ? "opacity-35" : view === "3d" ? "opacity-70" : "opacity-75"));
 
   return (
     <div className="relative h-full w-full">
-      <OrbitDrawing
-        svg={drawing}
-        label={view === "3d" ? `Trenza de ${name}: el tiempo avanza hacia la derecha` : `Recorrido de ${name}`}
-        // En 3D las hebras son la información: se atenúan menos que el recorrido en 2D.
-        className={cn("transition-opacity duration-700", live && (view === "3d" ? "opacity-70" : "opacity-35"))}
-      />
+      {view === "forma" ? (
+        <ShapeDrawing
+          shape={shape}
+          label={
+            shape.still
+              ? `${name} en la esfera de formas: un punto quieto en el polo, porque el triángulo nunca cambia de forma`
+              : `${name} en la esfera de formas: la curva es cómo cambia la forma del triángulo`
+          }
+          className={dimmed}
+        />
+      ) : (
+        <OrbitDrawing
+          svg={view === "3d" ? braid : svg}
+          label={view === "3d" ? `Trenza de ${name}: el tiempo avanza hacia la derecha` : `Recorrido de ${name}`}
+          className={dimmed}
+        />
+      )}
       <svg
         ref={overlay}
-        viewBox={drawing.viewBox}
+        viewBox={viewBox}
         aria-hidden
         className={cn("absolute inset-0 h-full w-full transition-opacity duration-700", live ? "opacity-100" : "opacity-0")}
       >
@@ -123,6 +153,19 @@ export function LiveThumbnail({
             <path fill="var(--foreground)" fillOpacity={0.06} stroke="var(--foreground)" strokeOpacity={0.45} strokeWidth={1} vectorEffect="non-scaling-stroke" />
             <polygon fill="none" stroke="var(--foreground)" strokeOpacity={0.8} strokeWidth={1.25} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           </>
+        ) : view === "forma" ? (
+          SEGMENT_OPACITY.map((opacity, s) => (
+            <path
+              key={s}
+              fill="none"
+              stroke="var(--foreground)"
+              strokeOpacity={opacity}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))
         ) : (
           BODY_COLORS.map((color, b) =>
             SEGMENT_OPACITY.map((opacity, s) => (
@@ -139,10 +182,20 @@ export function LiveThumbnail({
             )),
           )
         )}
-        {BODY_COLORS.map((color) => (
-          <circle key={color} r={dotRadius} fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
-        ))}
+        {view === "forma" ? (
+          <circle r={dotRadius} fill="var(--foreground)" style={{ filter: "drop-shadow(0 0 4px var(--foreground))" }} />
+        ) : (
+          BODY_COLORS.map((color) => (
+            <circle key={color} r={dotRadius} fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
+          ))
+        )}
       </svg>
+      {view === "forma" && shape.still && (
+        // Sin esta nota, un punto que no se mueve parecería un fallo; es justo lo que enseña Lagrange.
+        <p className="absolute inset-x-0 bottom-0 mx-auto w-fit rounded-md bg-background/75 px-2 py-1 text-center text-xs text-muted-foreground">
+          Quieto en el polo: el triángulo gira, pero nunca cambia de forma.
+        </p>
+      )}
     </div>
   );
 }
@@ -157,7 +210,6 @@ function planeAnimation(trajectory: Trajectory, node: SVGSVGElement): (now: numb
   const state = new Float64Array(trajectory.bodyCount * STRIDE);
   const xy = BODY_COLORS.map(() => new Float64Array(TRAIL_POINTS * 2));
   const span = trajectory.period * TRAIL_FRACTION;
-  const perSegment = Math.ceil(TRAIL_POINTS / SEGMENT_OPACITY.length);
 
   return (now) => {
     const time = (periodsElapsed(now) % 1) * trajectory.period;
@@ -171,14 +223,59 @@ function planeAnimation(trajectory: Trajectory, node: SVGSVGElement): (now: numb
     for (let b = 0; b < 3; b++) {
       dots[b]?.setAttribute("cx", xy[b][(TRAIL_POINTS - 1) * 2].toFixed(3));
       dots[b]?.setAttribute("cy", xy[b][(TRAIL_POINTS - 1) * 2 + 1].toFixed(3));
-      SEGMENT_OPACITY.forEach((_, s) => {
-        const from = s * perSegment;
-        const to = Math.min(TRAIL_POINTS - 1, (s + 1) * perSegment);
-        let d = "";
-        for (let i = from; i <= to; i++) d += `${i === from ? "M" : "L"}${xy[b][i * 2].toFixed(3)} ${xy[b][i * 2 + 1].toFixed(3)}`;
-        segments[b * SEGMENT_OPACITY.length + s]?.setAttribute("d", d);
-      });
+      drawTrail(segments.slice(b * SEGMENT_OPACITY.length, (b + 1) * SEGMENT_OPACITY.length), xy[b]);
     }
+  };
+}
+
+/** Último índice de la estela que cubre el tramo `s` (los tramos comparten su punto de unión). */
+const segmentEnd = (s: number) => Math.min(TRAIL_POINTS - 1, (s + 1) * Math.ceil(TRAIL_POINTS / SEGMENT_OPACITY.length));
+
+/** Escribe una estela de TRAIL_POINTS puntos [x0, y0, …] (ya en coordenadas del SVG) en sus tramos de opacidad creciente. */
+function drawTrail(segments: SVGPathElement[], xy: Float64Array) {
+  const perSegment = Math.ceil(TRAIL_POINTS / SEGMENT_OPACITY.length);
+  SEGMENT_OPACITY.forEach((_, s) => {
+    const from = s * perSegment;
+    const to = segmentEnd(s);
+    let d = "";
+    for (let i = from; i <= to; i++) d += `${i === from ? "M" : "L"}${xy[i * 2].toFixed(3)} ${xy[i * 2 + 1].toFixed(3)}`;
+    segments[s]?.setAttribute("d", d);
+  });
+}
+
+/**
+ * Vista Forma: la forma del triángulo en cada instante, como un punto que
+ * recorre su curva en la esfera, con la misma proyección que el SVG del
+ * servidor. En el reverso, punto y estela se atenúan.
+ */
+function shapeAnimation(trajectory: Trajectory, node: SVGSVGElement): (now: number) => void {
+  const dot = node.querySelector<SVGCircleElement>("circle");
+  const segments = [...node.querySelectorAll<SVGPathElement>("path")];
+  const state = new Float64Array(trajectory.bodyCount * STRIDE);
+  const point = new Float64Array(3);
+  const projected = new Float64Array(3);
+  const xy = new Float64Array(TRAIL_POINTS * 2);
+  const depth = new Float64Array(TRAIL_POINTS);
+  const span = trajectory.period * SHAPE_TRAIL_FRACTION;
+  const last = TRAIL_POINTS - 1;
+
+  return (now) => {
+    const time = (periodsElapsed(now) % 1) * trajectory.period;
+    for (let i = 0; i < TRAIL_POINTS; i++) {
+      stateAt(trajectory, time - span + (span * i) / last, state);
+      shapePoint(state, point);
+      projectSphere(point[0], point[1], point[2], SHAPE_AXES, projected);
+      xy[i * 2] = projected[0];
+      xy[i * 2 + 1] = -projected[1]; // en SVG el eje y apunta hacia abajo
+      depth[i] = projected[2];
+    }
+    dot?.setAttribute("cx", xy[last * 2].toFixed(3));
+    dot?.setAttribute("cy", xy[last * 2 + 1].toFixed(3));
+    dot?.setAttribute("opacity", depth[last] >= 0 ? "1" : String(BACK_OPACITY));
+    drawTrail(segments, xy);
+    SEGMENT_OPACITY.forEach((opacity, s) => {
+      segments[s]?.setAttribute("stroke-opacity", String(depth[segmentEnd(s)] >= 0 ? opacity : opacity * BACK_OPACITY));
+    });
   };
 }
 

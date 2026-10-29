@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import type { OrbitFamily, OrbitSlug } from "@/lib/orbits/catalog";
-import type { PlayerView } from "@/lib/orbits/inside";
+import type { PlayerView } from "@/lib/orbits/views";
 
 export type GalleryFilter = "todas" | OrbitFamily;
 
 /**
  * Estado de la interfaz de la galería que debe sobrevivir a ir al detalle y
- * volver (requisito del enunciado): filtro, vista 2D o 3D, posición de scroll
+ * volver (requisito del enunciado): filtro, vista, posición de scroll
  * y última tarjeta abierta, para devolverle el foco. Vive en memoria, sin
  * persistir: el enunciado no exige conservarlo tras recargar.
  *

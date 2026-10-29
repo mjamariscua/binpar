@@ -11,7 +11,6 @@ import {
   frameDistance,
   viewDistance,
   nextLap,
-  parseView,
   projectPoint,
   projectStrand,
   sliceFrame,
@@ -163,14 +162,5 @@ describe("cámara y proyección", () => {
     const frame = sliceFrame({ minX: -1, maxX: 2, minY: -3, maxY: 4 }, 5);
     expect(frame).toHaveLength(12);
     for (let i = 0; i < 12; i += 3) expect(frame[i]).toBe(5);
-  });
-});
-
-describe("parseView", () => {
-  it("solo «3d» activa la trenza; cualquier otro valor es la vista 2D", () => {
-    expect(parseView("3d")).toBe("3d");
-    expect(parseView("2d")).toBe("2d");
-    expect(parseView(null)).toBe("2d");
-    expect(parseView("trenza")).toBe("2d");
   });
 });

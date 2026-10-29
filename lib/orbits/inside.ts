@@ -1,5 +1,4 @@
 import { STRIDE, type StateVector } from "@/lib/physics/types";
-import type { OrbitView } from "./braid";
 
 /**
  * La órbita vista desde dentro, en primera persona: sobre uno de los cuerpos
@@ -14,9 +13,6 @@ import type { OrbitView } from "./braid";
  * El ángulo de la mirada en el suelo (yaw) se mide en el plano de la órbita,
  * desde +x hacia +y: es el mismo ángulo que da atan2 sobre las posiciones.
  */
-
-/** Vista del reproductor del detalle: las dos de la galería y, solo aquí, «Dentro». */
-export type PlayerView = OrbitView | "dentro";
 
 /** Desde dónde se mira: uno de los cuerpos (índice) o el centro de masas. */
 export type Viewpoint = 0 | 1 | 2 | "centro";
@@ -43,10 +39,6 @@ export const PITCH_LIMIT = deg(80);
 export const HOLD_PER_SIDE = 0.03;
 /** Radio de los cuerpos en la escena, en lados de la órbita. */
 export const BODY_RADIUS_PER_SIDE = 0.02;
-
-export function parsePlayerView(value: string | null | undefined): PlayerView {
-  return value === "3d" || value === "dentro" ? value : "2d";
-}
 
 /** «1», «2», «3» son los cuerpos (en la URL, contados desde 1); cualquier otro valor, el centro. */
 export function parseViewpoint(value: string | null | undefined): Viewpoint {

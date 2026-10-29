@@ -23,6 +23,7 @@ import {
   svgViewBox,
   type Bounds,
 } from "./geometry";
+import { SHAPE_VIEW, shapeCurve, sphereRuns, viewAxes } from "./shape";
 
 /**
  * Lo que las páginas necesitan saber de cada órbita sin animarla: magnitudes
@@ -55,6 +56,21 @@ export interface OrbitSummary {
     readonly lengthPerPeriod: number;
     readonly bounds: Bounds;
   };
+  /** La órbita en la esfera de formas, con la vista de la galería: la vista «Forma». */
+  readonly shape: ShapeDrawingData;
+}
+
+/**
+ * Lo que ShapeDrawing necesita de cada órbita: su curva en la esfera de
+ * formas, ya proyectada y partida en la cara visible y el reverso. El resto
+ * del dibujo (contorno, ecuador y choques) es igual para todas y no viaja con
+ * cada órbita.
+ */
+export interface ShapeDrawingData {
+  readonly front: string;
+  readonly back: string;
+  /** La curva es un solo punto: el triángulo nunca cambia de forma (Lagrange). */
+  readonly still: boolean;
 }
 
 /** Lo que dibuja OrbitDrawing: un trayecto SVG por cuerpo y, en la trenza, los marcos de cada periodo. */
@@ -73,6 +89,8 @@ const SVG_PADDING = 0.06;
  * dos veces (en el HTML y en el payload RSC).
  */
 const SVG_TOLERANCE = 0.0015;
+/** La misma tolerancia para la esfera de formas, cuyo lado (el diámetro) es 2. */
+const SHAPE_TOLERANCE = 2 * SVG_TOLERANCE;
 
 const cache = new Map<OrbitSlug, OrbitSummary>();
 
@@ -107,6 +125,7 @@ export function summarizeOrbit(orbit: PeriodicOrbit): OrbitSummary {
       paths: [path(0), path(1), path(2)],
     },
     braid,
+    shape: shapeDrawing(traj),
   };
   cache.set(orbit.slug, summary);
   return summary;
@@ -131,4 +150,19 @@ function braidDrawing(traj: Parameters<typeof buildBraid>[0], side: number): Orb
     lengthPerPeriod: braid.lengthPerPeriod,
     bounds: braid.bounds,
   };
+}
+
+/**
+ * La curva de la órbita en la esfera de formas, proyectada con la vista de la
+ * galería y partida en delante y detrás (el reverso se dibuja atenuado).
+ */
+function shapeDrawing(traj: Parameters<typeof shapeCurve>[0]): ShapeDrawingData {
+  const curve = shapeCurve(traj);
+  const { front, back } = sphereRuns(curve, viewAxes(SHAPE_VIEW));
+  const path = (runs: number[][]) => runs.map((run) => svgPathData(simplifyPath(run, SHAPE_TOLERANCE))).join("");
+  let spread = 0;
+  for (let i = 3; i < curve.length; i += 3) {
+    spread = Math.max(spread, Math.hypot(curve[i] - curve[0], curve[i + 1] - curve[1], curve[i + 2] - curve[2]));
+  }
+  return { front: path(front), back: path(back), still: spread < 1e-6 };
 }

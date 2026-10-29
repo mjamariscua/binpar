@@ -2,7 +2,20 @@ import { describe, expect, it } from "vitest";
 import { precomputePeriod, stateAt } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
 import { ORBITS, getOrbit, initialStateOf } from "./catalog";
-import { COLLISIONS, EULER_POINTS, canonicalTriangle, jacobi, middleBody, shapeCurve, shapePoint } from "./shape";
+import {
+  COLLISIONS,
+  EULER_POINTS,
+  SHAPE_VIEW,
+  canonicalTriangle,
+  equatorArc,
+  jacobi,
+  middleBody,
+  projectSphere,
+  shapeCurve,
+  shapePoint,
+  sphereRuns,
+  viewAxes,
+} from "./shape";
 
 /** Estado con estas posiciones [x1, y1, x2, y2, x3, y3] y velocidades nulas: a la esfera solo le importan las posiciones. */
 function stateOf(...xy: number[]): Float64Array {
@@ -204,6 +217,70 @@ describe("la forma ahora (canonicalTriangle)", () => {
     const first = triangle(stateAt(traj, 0, state));
     for (let i = 1; i < 64; i++) {
       triangle(stateAt(traj, (traj.period * i) / 64, state)).forEach((v, j) => expect(v).toBeCloseTo(first[j], 9));
+    }
+  });
+});
+
+describe("dibujo de la esfera", () => {
+  const axes = viewAxes(SHAPE_VIEW);
+  const dot = (a: readonly number[], b: readonly number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const project = (p: readonly number[]) => [...projectSphere(p[0], p[1], p[2], axes, new Float64Array(3))];
+
+  it("los ejes de la pantalla son ortonormales y forman un triedro directo", () => {
+    const { right, up, toward } = axes;
+    for (const v of [right, up, toward]) expect(dot(v, v)).toBeCloseTo(1, 12);
+    expect(dot(right, up)).toBeCloseTo(0, 12);
+    expect(dot(right, toward)).toBeCloseTo(0, 12);
+    expect(dot(up, toward)).toBeCloseTo(0, 12);
+    // derecha × arriba = hacia la cámara
+    const cross = [right[1] * up[2] - right[2] * up[1], right[2] * up[0] - right[0] * up[2], right[0] * up[1] - right[1] * up[0]];
+    cross.forEach((v, i) => expect(v).toBeCloseTo(toward[i], 12));
+  });
+
+  it("vista de la galería: el polo norte arriba y a la vista, el cuerpo 1 a la izquierda, el choque 1–2 detrás", () => {
+    const [nx, ny, nDepth] = project([0, 0, 1]);
+    expect(nx).toBeCloseTo(0, 12);
+    expect(ny).toBeGreaterThan(0.9);
+    expect(nDepth).toBeGreaterThan(0);
+    const [left, , leftDepth] = project(COLLISIONS[2].point); // choque 1–3
+    const [right, , rightDepth] = project(COLLISIONS[1].point); // choque 2–3
+    expect(left).toBeLessThan(0);
+    expect(right).toBeGreaterThan(0);
+    expect(leftDepth).toBeGreaterThan(0);
+    expect(rightDepth).toBeGreaterThan(0);
+    expect(project(COLLISIONS[0].point)[2]).toBeLessThan(0);
+    // El punto de Euler del cuerpo 3, donde arrancan cinco órbitas, de frente.
+    expect(project(EULER_POINTS[2].point)[0]).toBeCloseTo(0, 12);
+    expect(project(EULER_POINTS[2].point)[2]).toBeGreaterThan(0.9);
+  });
+
+  it("los tramos se parten en el contorno y el siguiente empieza en el mismo punto, sin hueco", () => {
+    // Un meridiano completo (unitario): pasa por delante y por detrás, cruzando el contorno dos veces.
+    const meridian: number[] = [];
+    for (let i = 0; i <= 200; i++) {
+      const a = (2 * Math.PI * i) / 200;
+      meridian.push(Math.cos(a) * 0.6, -Math.cos(a) * 0.8, Math.sin(a));
+    }
+    const { front, back } = sphereRuns(meridian, axes);
+    const runs = [...front, ...back];
+    expect(front).toHaveLength(2);
+    expect(back).toHaveLength(1);
+    const onContour = (x: number, y: number) => Math.abs(Math.hypot(x, y) - 1) < 1e-9;
+    const cuts = runs.map((r) => [r[r.length - 2], r[r.length - 1]]).filter(([x, y]) => onContour(x, y));
+    expect(cuts).toHaveLength(runs.length - 1);
+    for (const [x, y] of cuts) expect(runs.some((r) => r[0] === x && r[1] === y)).toBe(true);
+  });
+
+  it("cada arco del ecuador va de un choque a otro pasando por el punto de Euler de su cuerpo", () => {
+    for (let middle = 0; middle < 3; middle++) {
+      const arc = equatorArc(middle, 48);
+      const at = (i: number) => [arc[i * 3], arc[i * 3 + 1], arc[i * 3 + 2]];
+      at(24).forEach((v, i) => expect(v).toBeCloseTo(EULER_POINTS[middle].point[i], 12));
+      for (const end of [at(0), at(48)]) {
+        const collision = COLLISIONS.find((c) => Math.hypot(...c.point.map((v, i) => v - end[i])) < 1e-12);
+        expect(collision?.bodies).toContain(middle);
+      }
+      for (let i = 1; i < 48; i++) expect(middleBody(at(i)[0], at(i)[1])).toBe(middle);
     }
   });
 });

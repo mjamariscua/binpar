@@ -20,7 +20,6 @@ import {
   gazeTargetYaw,
   initialYaw,
   lookVector,
-  parsePlayerView,
   parseViewpoint,
   planeToWorld,
   wrapAngle,
@@ -229,10 +228,7 @@ describe("cámara", () => {
 });
 
 describe("URL", () => {
-  it("vista y punto de vista: ida y vuelta, y valores desconocidos por defecto", () => {
-    expect(parsePlayerView("dentro")).toBe("dentro");
-    expect(parsePlayerView("3d")).toBe("3d");
-    expect(parsePlayerView("4d")).toBe("2d");
+  it("punto de vista: ida y vuelta, y valores desconocidos por defecto", () => {
     for (const v of [0, 1, 2, "centro"] as const) expect(parseViewpoint(formatViewpoint(v))).toBe(v);
     expect(parseViewpoint("7")).toBe("centro");
     expect(parseViewpoint(null)).toBe("centro");
