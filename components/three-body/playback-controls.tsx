@@ -1,7 +1,7 @@
 "use client";
 
 import { Pause, Play, RotateCcw } from "lucide-react";
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Segmented } from "@/components/ui/segmented";
@@ -14,7 +14,8 @@ const SPEED_OPTIONS = SPEEDS.map((s) => ({ value: String(s), label: SPEED_LABELS
 /** El scrub recorre el periodo en 1000 pasos; RePág/AvPág saltan de 10 en 10 (comportamiento de Radix). */
 const SCRUB_STEPS = 1000;
 
-export function PlaybackControls({ slug, period }: { slug: OrbitSlug; period: number }) {
+/** `extra` va en la fila de la velocidad, a la derecha (el selector de vista 2D | 3D): no añade altura en escritorio. */
+export function PlaybackControls({ slug, period, extra }: { slug: OrbitSlug; period: number; extra?: ReactNode }) {
   const { time, playing, speed } = usePlayback(slug);
   const togglePlaying = usePlaybackStore((s) => s.togglePlaying);
   const seek = usePlaybackStore((s) => s.seek);
@@ -65,6 +66,7 @@ export function PlaybackControls({ slug, period }: { slug: OrbitSlug; period: nu
           aria-labelledby={speedLabelId}
           itemClassName="px-2.5 font-mono"
         />
+        {extra && <div className="ml-auto flex items-center gap-3">{extra}</div>}
       </div>
     </div>
   );

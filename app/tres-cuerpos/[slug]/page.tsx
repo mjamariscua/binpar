@@ -69,6 +69,7 @@ export default async function OrbitPage({ params }: PageProps<"/tres-cuerpos/[sl
           name={orbit.name}
           period={orbit.period}
           poster={<OrbitDrawing svg={summary.svg} label={`Recorrido completo de ${orbit.name}`} />}
+          braidPoster={<OrbitDrawing svg={summary.braid} label={`Trenza de ${orbit.name}: el tiempo avanza hacia la derecha`} />}
         />
         <OrbitSummaryPanel orbit={orbit} summary={summary} />
       </div>
