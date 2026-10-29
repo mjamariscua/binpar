@@ -14,13 +14,13 @@ import { BODY_COLORS, BODY_GLOW, SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import { bodyPath, orbitBounds, sampleTrails, to3D } from "@/lib/orbits/geometry";
 import {
   BODY_RADIUS_PER_SIDE,
-  DEFAULT_PITCH,
   EYE_HEIGHT_PER_SIDE,
   HOLD_PER_SIDE,
   INSIDE_FOV,
   baseYaw,
   eyePosition,
   lookVector,
+  wrapAngle,
   type Follow,
   type Gaze,
   type Viewpoint,
@@ -28,6 +28,7 @@ import {
 import { loadTrajectory } from "@/lib/orbits/load-trajectory";
 import { INITIAL_PLAYBACK } from "@/lib/orbits/playback";
 import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
+import { useInsideStore } from "@/lib/store/inside-store";
 import { usePlaybackStore } from "@/lib/store/playback-store";
 
 /** La estela cubre este tramo del periodo detrás de cada cuerpo: más larga que en 2D, porque desde dentro se ve menos recorrido. */
@@ -38,6 +39,10 @@ const TRAIL_POINTS = 480;
 const PATH_MIN_SEGMENT = 0.002;
 /** Paso máximo del suavizado de la mirada: tras un rato en pausa, el primer fotograma no salta. */
 const MAX_LOOK_DT = 1 / 15;
+/** Constante de tiempo con la que la vista alcanza el giro pedido (arrastre, teclas o botones), en segundos. */
+const LOOK_SMOOTHING = 0.12;
+/** Por debajo de este ángulo, la vista ya ha llegado: deja de pedir fotogramas en pausa. */
+const LOOK_EPSILON = 1e-4;
 const MARK_COLOR = "#f3efe6";
 
 export interface InsideSceneProps {
@@ -77,8 +82,9 @@ function InsideContent({ slug, masses, from, gaze, trajectory }: InsideSceneProp
   const invalidate = useThree((s) => s.invalidate);
   const { reducedMotion } = useVisualQuality();
 
-  // Con frameloop "demand", cualquier cambio de la reproducción pide un fotograma.
+  // Con frameloop "demand", cualquier cambio de la reproducción o de la mirada pide un fotograma.
   useEffect(() => usePlaybackStore.subscribe(() => invalidate()), [invalidate]);
+  useEffect(() => useInsideStore.subscribe(() => invalidate()), [invalidate]);
 
   const side = useMemo(() => boundsSide(orbitBounds(trajectory)), [trajectory]);
   const paths = useMemo(
@@ -99,6 +105,8 @@ function InsideContent({ slug, masses, from, gaze, trajectory }: InsideSceneProp
   const look = useMemo(() => new Float64Array(3), []);
   const scratch = useMemo(() => new Float64Array(2), []);
   const follow = useRef<Follow | null>(null);
+  // Giro e inclinación que se ven ahora; se acercan a los del store con suavidad.
+  const shown = useRef({ yaw: useInsideStore.getState().yaw, pitch: useInsideStore.getState().pitch });
 
   useEffect(() => () => trails.forEach((t) => t.dispose()), [trails]);
   useEffect(() => trails.forEach((t) => t.setResolution(size.width, size.height)), [trails, size]);
@@ -136,12 +144,23 @@ function InsideContent({ slug, masses, from, gaze, trajectory }: InsideSceneProp
       reducedMotion ? 0 : undefined,
     );
     follow.current = next;
+
+    // Lo que ha girado la persona, por el arco corto y con suavidad (salto, con «reducir movimiento»).
+    const goal = useInsideStore.getState();
+    const view = shown.current;
+    const step = reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, MAX_LOOK_DT) / LOOK_SMOOTHING);
+    const yawLeft = wrapAngle(goal.yaw - view.yaw);
+    const pitchLeft = goal.pitch - view.pitch;
+    const arrived = Math.abs(yawLeft) < LOOK_EPSILON && Math.abs(pitchLeft) < LOOK_EPSILON;
+    view.yaw = arrived ? goal.yaw : view.yaw + yawLeft * step;
+    view.pitch = arrived ? goal.pitch : view.pitch + pitchLeft * step;
+
     eyePosition(state, masses, from, eyeHeight, eye);
-    lookVector(next.yaw, DEFAULT_PITCH, look);
+    lookVector(next.yaw + view.yaw, view.pitch, look);
     three.camera.position.set(eye[0], eye[1], eye[2]);
     three.camera.lookAt(eye[0] + look[0], eye[1] + look[1], eye[2] + look[2]);
-    // En pausa, el giro suave hacia el centro pide fotogramas hasta engancharse.
-    if (!next.locked && next.yaw !== before) invalidate();
+    // En pausa, los giros suaves (hacia el centro o el que pide la persona) piden fotogramas hasta llegar.
+    if ((!next.locked && next.yaw !== before) || !arrived) invalidate();
   });
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Rotate3d } from "lucide-react";
+import { Hand, Rotate3d } from "lucide-react";
 import { lazy, Suspense, useEffect, useId, useState, useSyncExternalStore, ViewTransition, type ReactNode } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
 import { useGalleryStore } from "@/lib/store/gallery-store";
 import { useInsideStore } from "@/lib/store/inside-store";
 import { usePlaybackStore } from "@/lib/store/playback-store";
+import { LookButtons, LookSurface } from "./inside-look";
 import { PlaybackControls } from "./playback-controls";
 
 // three.js y las escenas se descargan solo al abrir un detalle; la trenza y «Dentro», solo si se eligen.
@@ -113,6 +114,7 @@ export function OrbitPlayer({
   const setGaze = useInsideStore((s) => s.setGaze);
   const [camera, setCamera] = useState<BraidViewName | null>("perspectiva");
   const [touchRotate, setTouchRotate] = useState(false);
+  const [touchLook, setTouchLook] = useState(false);
   const viewLabelId = useId();
   const cameraLabelId = useId();
   const fromLabelId = useId();
@@ -178,13 +180,13 @@ export function OrbitPlayer({
               }
             >
               {inside ? (
-                <div
-                  className="absolute inset-0"
-                  role="img"
-                  aria-label={`${name} desde dentro, ${from === "centro" ? "en el centro de masas" : `sobre el cuerpo ${from + 1}`}: la órbita es el suelo y los cuerpos se mueven a tu alrededor, bajo un cielo de estrellas fijas.`}
+                <LookSurface
+                  label={`${name} desde dentro, ${from === "centro" ? "en el centro de masas" : `sobre el cuerpo ${from + 1}`}: la órbita es el suelo y los cuerpos se mueven a tu alrededor, bajo un cielo de estrellas fijas. Flechas para mirar alrededor; Inicio vuelve a la mirada inicial.`}
+                  // En táctil, mirar con el dedo solo tras activarlo: si no, el dedo desplaza la página.
+                  touch={coarse && touchLook}
                 >
                   <InsideScene slug={slug} masses={masses} from={from} gaze={gaze} />
-                </div>
+                </LookSurface>
               ) : is3D ? (
                 <div
                   className="absolute inset-0"
@@ -246,7 +248,19 @@ export function OrbitPlayer({
               </div>
             )}
           </div>
-          <p className="max-w-prose text-sm text-muted-foreground">{insideText(slug, from, gaze)}</p>
+          <LookButtons resetLabel={from !== "centro" && gaze === "centro" ? "Mirar al centro" : "Mirar al frente"}>
+            {coarse && (
+              <Button variant="outline" size="sm" aria-pressed={touchLook} onClick={() => setTouchLook((v) => !v)}>
+                <Hand /> Mirar con el dedo
+              </Button>
+            )}
+          </LookButtons>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            {insideText(slug, from, gaze)}
+            {coarse
+              ? " Activa «Mirar con el dedo» para mirar alrededor, o usa los botones."
+              : " Arrastra para mirar alrededor, o usa las flechas con la escena enfocada."}
+          </p>
         </div>
       )}
       {is3D && (
