@@ -29,6 +29,10 @@ export function OrbitSummaryPanel({ orbit, summary }: { orbit: PeriodicOrbit; su
           trenza que se repite cada periodo. Así clasificó Moore (1993) estas órbitas, y buscando una trenza concreta
           encontró la figura de ocho.
         </p>
+        <p className="mt-3 text-muted-foreground">
+          En la vista «Dentro», la órbita es el suelo y tú estás en ella: en el centro de masas, el único punto que no
+          se mueve, o viajando sobre un cuerpo, desde donde ves cómo se mueven los otros dos respecto a ti.
+        </p>
         {/* Antes iba bajo el título y empujaba los controles fuera de la primera pantalla. */}
         {orbit.family === "suvakov-2013" && <p className="mt-3 text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>}
       </Section>

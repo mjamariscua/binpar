@@ -21,7 +21,7 @@ Requisitos: Node ≥ 20.9 y pnpm 10 (`corepack enable`).
 ```bash
 pnpm install
 pnpm dev              # http://localhost:3000
-pnpm test             # 140 tests (física, órbitas, trenza, tutor, API, formato)
+pnpm test             # 167 tests (física, órbitas, trenza, primera persona, tutor, API, formato)
 pnpm typecheck
 pnpm lint
 pnpm orbits:report    # cierre, energía y coste de cada órbita
@@ -92,6 +92,12 @@ dice en qué capítulo estás y deja saltar entre ellos.
   corte del instante actual), la idea con la que Moore (1993) clasificó estas
   órbitas. En el detalle se puede girar, con vistas fijas como alternativa
   accesible, y la vista va en la URL (`?vista=3d`).
+- **Vista «Dentro»** (solo en el detalle): la órbita en primera persona, desde
+  el centro de masas o viajando sobre uno de los cuerpos, con la órbita como
+  suelo y un cielo de estrellas fijas. Sobre un cuerpo se ve el movimiento
+  relativo: en Lagrange los otros dos parecen quietos, porque el triángulo gira
+  contigo. Se mira alrededor arrastrando, con las flechas o con botones, y
+  también va en la URL (`?vista=dentro&desde=2`).
 - **Estado conservado** al volver a la galería: filtro, vista, scroll y foco en
   la tarjeta abierta; y cada órbita recuerda su instante y su velocidad.
 - **Explorador**: eliges la velocidad inicial, se mide cuánto vuelve el sistema
@@ -132,7 +138,10 @@ scripts/                   informes reproducibles de las órbitas
 | **Tarjetas vivas en SVG** (no WebGL) | Seis contextos WebGL son caros y los navegadores los limitan; un bucle rAF por tarjeta, solo si está en pantalla | Estelas en tramos de opacidad (SVG no degrada a lo largo de un trazo) |
 | **3D como trenza en el tiempo**, no como física 3D | Las seis órbitas son planas: una física 3D (unos 15 archivos) no cambiaría nada visible. Con el tiempo como tercera dimensión, la periodicidad se ve como una trenza que se repite. Sale del periodo ya precomputado, sin física nueva | Se dibuja la trenza, pero no se calcula su «palabra de trenza» (la clasificación de Moore) |
 | **Trenza de las tarjetas en SVG proyectado**; WebGL solo en el detalle | Misma razón que las tarjetas vivas; la proyección y la simplificación se hacen en el servidor | Las tarjetas no se pueden girar; ≈ 10 KB comprimidos más en el payload de la galería |
-| **Girar la trenza con el dedo solo tras activarlo** | OrbitControls pone `touch-action: none` en el canvas y bloquearía el scroll de la página en móvil | En táctil, un toque más para girar; las vistas fijas funcionan siempre |
+| **Girar la trenza y mirar «Dentro» con el dedo solo tras activarlo** | Girar con el dedo exige `touch-action: none` en el canvas, que bloquearía el scroll de la página en móvil | En táctil, un toque más; las vistas fijas y los botones funcionan siempre |
+| **«Dentro» solo en el detalle**; la galería la muestra y la deja como 2D | Es la misma órbita plana vista desde dentro, y seis escenas WebGL en las tarjetas son lo que ya se descartó por coste | Al volver a la galería desde «Dentro», la vista pasa a 2D |
+| **Mirada «al centro» con retención** junto al centro de masas | El cuerpo 3 arranca justo en el centro en cinco de las seis órbitas y en el ocho los tres lo cruzan: ahí la dirección «al centro» no existe y la cámara giraría 180° de golpe | Al cruzar el centro, la mirada da media vuelta suave (≈ 1 s); «Mirada fija» la evita |
+| **Estrellas fijas, «Mirada fija», sin alabeo, inclinación ±80°** | Una referencia que no gira hace legible el movimiento relativo y reduce el mareo; con la mirada fija se ve la diferencia entre el marco que gira y el inercial | Las estrellas no parpadean (el parpadeo de drei es un pulso común a todas) |
 | **Estado del laboratorio compartido** por persona y tutor (zustand, mismas acciones) | El tutor no tiene un camino propio: solo puede hacer lo que permite la interfaz | Estado global de módulo (vive mientras la pestaña) |
 | **Herramientas del tutor ejecutadas en el cliente** (sin `execute` en el servidor) | Lo que cambian es la interfaz; el navegador devuelve al modelo los datos reales | Cada respuesta con herramienta son 2–3 peticiones |
 | **Proveedor autodetectado** y **modelo rápido** por defecto | El equipo revisará con su clave, sea cual sea; en un chat pesa la latencia | Algo menos de calidad que un modelo grande (`LLM_MODEL` lo cambia) |
@@ -149,10 +158,13 @@ scripts/                   informes reproducibles de las órbitas
 
 ## Verificación
 
-- **140 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
+- **167 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
   cierre y conservación de energía de **cada órbita**, comparación de fuentes,
   clasificación de órbitas, la trenza (cada hebra vuelve a su posición en T y
-  en 2T, proyecciones y encuadre de cámara), cifras Tierra–Luna, descripciones de la galería
+  en 2T, proyecciones y encuadre de cámara), la vista «Dentro» (centro de masas
+  quieto en las seis órbitas; en Lagrange, desde un cuerpo, los otros dos a ±30°
+  y a distancia constante; retención en el centro y giro suave), cifras
+  Tierra–Luna, descripciones de la galería
   (sus afirmaciones se comprueban), diagnóstico, proveedor, límite de
   peticiones, explorador (recupera los valores de Li & Liao partiendo de los
   5 dígitos originales de Moth I) y la **API del tutor de punta a punta con
@@ -219,6 +231,10 @@ partir de mediciones y están documentadas arriba.
   Transitions (Chromium reciente, Safari reciente).
 - **Escenas 3D:** tienen nombre, póster y controles accesibles, pero el
   movimiento en sí no se narra.
+- **Vista «Dentro»:** los cuerpos se distinguen solo por el color (el mismo
+  que en el selector «Desde»), sin etiquetas en la escena. Viajar sobre un
+  cuerpo puede marear: hay «Mirada fija», ½× y respeto a «reducir
+  movimiento», pero no se ha probado con personas.
 - **Sin tests E2E automatizados** (Playwright): la interfaz se verificó a mano
   en el navegador.
 - **Explorador:** un buen retorno es una candidata a órbita periódica, no una
