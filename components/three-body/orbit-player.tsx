@@ -4,23 +4,55 @@ import { Rotate3d } from "lucide-react";
 import { lazy, Suspense, useEffect, useId, useState, useSyncExternalStore, ViewTransition, type ReactNode } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
-import { Segmented } from "@/components/ui/segmented";
-import { parseView, type BraidViewName, type OrbitView } from "@/lib/orbits/braid";
+import { Segmented, type SegmentedOption } from "@/components/ui/segmented";
+import type { BraidViewName } from "@/lib/orbits/braid";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
-import { SCENE_BACKGROUND } from "@/lib/orbits/colors";
+import { BODY_COLORS, SCENE_BACKGROUND } from "@/lib/orbits/colors";
+import {
+  formatViewpoint,
+  parsePlayerView,
+  parseViewpoint,
+  type Gaze,
+  type PlayerView,
+  type Viewpoint,
+  type ViewpointParam,
+} from "@/lib/orbits/inside";
 import { useCoarsePointer } from "@/lib/hooks/use-coarse-pointer";
 import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
 import { useGalleryStore } from "@/lib/store/gallery-store";
+import { useInsideStore } from "@/lib/store/inside-store";
 import { usePlaybackStore } from "@/lib/store/playback-store";
 import { PlaybackControls } from "./playback-controls";
 
-// three.js y las escenas se descargan solo al abrir un detalle; la de la trenza, solo si se elige 3D.
+// three.js y las escenas se descargan solo al abrir un detalle; la trenza y «Dentro», solo si se eligen.
 const OrbitScene = lazy(() => import("./orbit-scene"));
 const BraidScene = lazy(() => import("./braid-scene"));
+const InsideScene = lazy(() => import("./inside-scene"));
 
-const VIEWS: readonly { value: OrbitView; label: string; ariaLabel: string }[] = [
+const VIEWS: readonly { value: PlayerView; label: string; ariaLabel: string }[] = [
   { value: "2d", label: "2D", ariaLabel: "2D: el recorrido en el plano" },
   { value: "3d", label: "3D", ariaLabel: "3D: la trenza en el tiempo" },
+  { value: "dentro", label: "Dentro", ariaLabel: "Dentro: la órbita en primera persona" },
+];
+
+const VIEWPOINTS: readonly SegmentedOption<ViewpointParam>[] = [
+  { value: "centro", label: "Centro", ariaLabel: "En el centro de masas" },
+  ...BODY_COLORS.map((color, b) => ({
+    value: formatViewpoint(b as Viewpoint),
+    label: (
+      <>
+        <BodyDot color={color} />
+        {/* En móvil, solo el número: las cuatro opciones caben en una fila. */}
+        <span className="max-sm:sr-only">Cuerpo</span> {b + 1}
+      </>
+    ),
+    ariaLabel: `Sobre el cuerpo ${b + 1}`,
+  })),
+];
+
+const GAZES: readonly SegmentedOption<Gaze>[] = [
+  { value: "centro", label: "Al centro", ariaLabel: "Mirada al centro de masas" },
+  { value: "fija", label: "Fija", ariaLabel: "Mirada fija respecto a las estrellas" },
 ];
 
 const CAMERAS: readonly { value: BraidViewName; label: string }[] = [
@@ -57,12 +89,15 @@ export function OrbitPlayer({
   slug,
   name,
   period,
+  masses,
   poster,
   braidPoster,
 }: {
   slug: OrbitSlug;
   name: string;
   period: number;
+  /** Masas de los cuerpos: la vista «Dentro» las usa para el centro de masas. */
+  masses: readonly number[];
   poster: ReactNode;
   braidPoster: ReactNode;
 }) {
@@ -71,29 +106,42 @@ export function OrbitPlayer({
   const coarse = useCoarsePointer();
   const view = useGalleryStore((s) => s.view);
   const setView = useGalleryStore((s) => s.setView);
+  const from = useInsideStore((s) => s.from);
+  const setFrom = useInsideStore((s) => s.setFrom);
+  // Con «reducir movimiento», la mirada no gira sola salvo que se pida.
+  const gaze = useInsideStore((s) => s.gaze) ?? (reducedMotion ? "fija" : "centro");
+  const setGaze = useInsideStore((s) => s.setGaze);
   const [camera, setCamera] = useState<BraidViewName | null>("perspectiva");
   const [touchRotate, setTouchRotate] = useState(false);
   const viewLabelId = useId();
   const cameraLabelId = useId();
+  const fromLabelId = useId();
+  const gazeLabelId = useId();
   const is3D = view === "3d";
+  const inside = view === "dentro";
 
-  // La URL manda al abrir: un enlace con ?vista=3d abre la órbita en 3D. Se
-  // lee de window.location y no con useSearchParams, que en esta ruta
-  // estática obligaría a envolver el reproductor en un Suspense y lo sacaría
-  // del HTML del servidor. Coste: con ?vista=3d se ve un instante el póster 2D.
+  // La URL manda al abrir: un enlace con ?vista=3d abre la órbita en 3D, y
+  // ?vista=dentro&desde=2, sobre el cuerpo 2. Se lee de window.location y no
+  // con useSearchParams, que en esta ruta estática obligaría a envolver el
+  // reproductor en un Suspense y lo sacaría del HTML del servidor. Coste: con
+  // el enlace se ve un instante el póster 2D.
   useEffect(() => {
-    const param = new URLSearchParams(window.location.search).get("vista");
-    if (param !== null) setView(parseView(param));
-  }, [setView]);
+    const params = new URLSearchParams(window.location.search);
+    const vista = params.get("vista");
+    if (vista !== null) setView(parsePlayerView(vista));
+    if (vista === "dentro") setFrom(parseViewpoint(params.get("desde")));
+  }, [setView, setFrom]);
 
-  // Y la URL sigue a la vista elegida, para poder compartirla. replaceState y
-  // no pushState: cambiar de vista no debe llenar el historial del botón «atrás».
+  // Y la URL sigue a lo elegido, para poder compartirlo. replaceState y no
+  // pushState: cambiar de vista no debe llenar el historial del botón «atrás».
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (view === "3d") url.searchParams.set("vista", "3d");
-    else url.searchParams.delete("vista");
+    if (view === "2d") url.searchParams.delete("vista");
+    else url.searchParams.set("vista", view);
+    if (inside && from !== "centro") url.searchParams.set("desde", formatViewpoint(from));
+    else url.searchParams.delete("desde");
     if (url.href !== window.location.href) window.history.replaceState(null, "", url);
-  }, [view]);
+  }, [view, inside, from]);
 
   // Con «reducir movimiento», una órbita que se abre por primera vez empieza en
   // pausa: el movimiento lo decide la persona con el botón de reproducir.
@@ -122,8 +170,22 @@ export function OrbitPlayer({
               </StatusOverlay>
             )}
           >
-            <Suspense fallback={<StatusOverlay>{is3D ? "Preparando la trenza…" : "Calculando la órbita…"}</StatusOverlay>}>
-              {is3D ? (
+            <Suspense
+              fallback={
+                <StatusOverlay>
+                  {is3D ? "Preparando la trenza…" : inside ? "Preparando la vista desde dentro…" : "Calculando la órbita…"}
+                </StatusOverlay>
+              }
+            >
+              {inside ? (
+                <div
+                  className="absolute inset-0"
+                  role="img"
+                  aria-label={`${name} desde dentro, ${from === "centro" ? "en el centro de masas" : `sobre el cuerpo ${from + 1}`}: la órbita es el suelo y los cuerpos se mueven a tu alrededor, bajo un cielo de estrellas fijas.`}
+                >
+                  <InsideScene slug={slug} masses={masses} from={from} gaze={gaze} />
+                </div>
+              ) : is3D ? (
                 <div
                   className="absolute inset-0"
                   role="img"
@@ -145,6 +207,7 @@ export function OrbitPlayer({
             </Suspense>
           </ErrorBoundary>
         )}
+        {inside && <ViewpointBadge from={from} />}
       </div>
       </ViewTransition>
       <PlaybackControls
@@ -159,6 +222,33 @@ export function OrbitPlayer({
           </>
         }
       />
+      {inside && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span id={fromLabelId} className="text-sm text-muted-foreground">
+                Desde
+              </span>
+              <Segmented
+                size="sm"
+                value={formatViewpoint(from)}
+                options={VIEWPOINTS}
+                onChange={(value) => setFrom(parseViewpoint(value))}
+                aria-labelledby={fromLabelId}
+              />
+            </div>
+            {from !== "centro" && (
+              <div className="flex flex-wrap items-center gap-3">
+                <span id={gazeLabelId} className="text-sm text-muted-foreground">
+                  Mirada
+                </span>
+                <Segmented size="sm" value={gaze} options={GAZES} onChange={setGaze} aria-labelledby={gazeLabelId} />
+              </div>
+            )}
+          </div>
+          <p className="max-w-prose text-sm text-muted-foreground">{insideText(slug, from, gaze)}</p>
+        </div>
+      )}
       {is3D && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
@@ -187,6 +277,47 @@ export function OrbitPlayer({
       )}
     </section>
   );
+}
+
+/** Qué se ve desde cada punto de vista, y la idea que enseña. */
+function insideText(slug: OrbitSlug, from: Viewpoint, gaze: Gaze): string {
+  if (from === "centro") {
+    return "Estás en el centro de masas, el único punto que no se mueve: los tres cuerpos danzan a tu alrededor y ninguno pasa nunca lejos de ti.";
+  }
+  const body = `Viajas sobre el cuerpo ${from + 1}`;
+  if (gaze === "fija") {
+    return `${body} y la mirada no gira: solo te desplazas con él, y las estrellas quedan quietas.${
+      slug === "lagrange" ? " Ahora sí ves girar el triángulo: es el mismo movimiento, visto sin girar con él." : ""
+    }`;
+  }
+  return `${body}, mirando siempre al centro de masas: lo que ves es cómo se mueven los otros dos respecto a ti.${
+    slug === "lagrange"
+      ? " En Lagrange parecen quietos, porque el triángulo gira contigo; con «Mirada fija» lo verás girar."
+      : ""
+  } Si marea, prueba ½× o «Mirada fija».`;
+}
+
+/** Recordatorio sobre la escena de desde dónde se mira, con el color del cuerpo. */
+function ViewpointBadge({ from }: { from: Viewpoint }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 rounded-full bg-background/60 px-3 py-1 text-xs text-foreground backdrop-blur-sm"
+    >
+      {from === "centro" ? (
+        "En el centro de masas"
+      ) : (
+        <>
+          <BodyDot color={BODY_COLORS[from]} />
+          Sobre el cuerpo {from + 1}
+        </>
+      )}
+    </div>
+  );
+}
+
+function BodyDot({ color }: { color: string }) {
+  return <span aria-hidden className="inline-block size-2 shrink-0 rounded-full" style={{ background: color }} />;
 }
 
 function StatusOverlay({ children }: { children: ReactNode }) {

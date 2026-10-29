@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { OrbitView } from "@/lib/orbits/braid";
 import type { OrbitFamily, OrbitSlug } from "@/lib/orbits/catalog";
+import type { PlayerView } from "@/lib/orbits/inside";
 
 export type GalleryFilter = "todas" | OrbitFamily;
 
@@ -11,15 +11,16 @@ export type GalleryFilter = "todas" | OrbitFamily;
  * persistir: el enunciado no exige conservarlo tras recargar.
  *
  * La vista la comparten galería y detalle: si eliges 3D en la galería, la
- * órbita que abras se abre en 3D, y viceversa.
+ * órbita que abras se abre en 3D, y viceversa. «Dentro» solo existe en el
+ * detalle: la galería la muestra y la deja como 2D.
  */
 interface GalleryStore {
   readonly filter: GalleryFilter;
-  readonly view: OrbitView;
+  readonly view: PlayerView;
   readonly scrollY: number;
   readonly lastVisited: OrbitSlug | null;
   setFilter: (filter: GalleryFilter) => void;
-  setView: (view: OrbitView) => void;
+  setView: (view: PlayerView) => void;
   /** Se llama al abrir una tarjeta, justo antes de navegar. */
   rememberExit: (slug: OrbitSlug, scrollY: number) => void;
 }

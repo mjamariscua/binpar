@@ -36,7 +36,8 @@ const VIEWS: readonly { value: OrbitView; label: string; ariaLabel: string }[] =
 export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
   const filter = useGalleryStore((s) => s.filter);
   const setFilter = useGalleryStore((s) => s.setFilter);
-  const view = useGalleryStore((s) => s.view);
+  // «Dentro» solo existe en el detalle: aquí se ve como 2D.
+  const view = useGalleryStore((s) => (s.view === "3d" ? "3d" : "2d"));
   const setView = useGalleryStore((s) => s.setView);
   const rememberExit = useGalleryStore((s) => s.rememberExit);
   const cards = useRef(new Map<OrbitSlug, HTMLAnchorElement>());
@@ -49,6 +50,12 @@ export function OrbitGallery({ items }: { items: readonly GalleryItem[] }) {
     window.scrollTo({ top: lastVisited ? scrollY : 0 });
     if (lastVisited) cards.current.get(lastVisited)?.focus({ preventScroll: true });
   }, []);
+
+  // Y al volver desde «Dentro», la vista queda en 2D: así la órbita que abras
+  // después se abre en lo que marca el selector.
+  useEffect(() => {
+    if (useGalleryStore.getState().view === "dentro") setView("2d");
+  }, [setView]);
 
   const visible = items.filter((item) => matchesFilter(item.family, filter));
 
