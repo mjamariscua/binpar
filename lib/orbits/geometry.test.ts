@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { packState } from "@/lib/physics/nbody";
 import { precomputePeriod } from "@/lib/physics/trajectory";
-import { bodyPath, orbitBounds, padBounds, simplifyPath, svgPathData, svgViewBox } from "./geometry";
+import { bodyPath, orbitBounds, padBounds, pointsBounds, simplifyPath, svgPathData, svgViewBox } from "./geometry";
 
 // Binaria circular: los dos cuerpos recorren la circunferencia unidad.
 const circular = precomputePeriod(
@@ -21,6 +21,10 @@ describe("orbitBounds / padBounds", () => {
     expect(b.maxX).toBeCloseTo(1, 6);
     expect(b.minY).toBeCloseTo(-1, 3);
     expect(b.maxY).toBeCloseTo(1, 3);
+  });
+
+  it("pointsBounds encuadra una lista plana de puntos", () => {
+    expect(pointsBounds([1, 2, -3, 5, 4, -1])).toEqual({ minX: -3, maxX: 4, minY: -1, maxY: 5 });
   });
 
   it("añade el margen proporcional al lado mayor", () => {

@@ -29,6 +29,21 @@ export function orbitBounds(trajectory: Trajectory): Bounds {
   return { minX, maxX, minY, maxY };
 }
 
+/** Rectángulo que contiene una lista plana de puntos [x0, y0, x1, y1, …]. */
+export function pointsBounds(points: readonly number[]): Bounds {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i < points.length; i += 2) {
+    minX = Math.min(minX, points[i]);
+    maxX = Math.max(maxX, points[i]);
+    minY = Math.min(minY, points[i + 1]);
+    maxY = Math.max(maxY, points[i + 1]);
+  }
+  return { minX, maxX, minY, maxY };
+}
+
 /** Añade un margen proporcional al lado mayor, para que los cuerpos no toquen el borde. */
 export function padBounds(b: Bounds, fraction: number): Bounds {
   const pad = Math.max(b.maxX - b.minX, b.maxY - b.minY) * fraction;
