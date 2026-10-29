@@ -10,3 +10,10 @@ export const BODY_COLORS = ["#f5b83d", "#5ec8f2", "#f2708a"] as const;
  * canvas tapa el póster SVG en cuanto pinta su primer fotograma.
  */
 export const SCENE_BACKGROUND = "#0a0b10";
+
+/**
+ * Los cuerpos de las escenas 3D se pintan con su color multiplicado por este
+ * factor, «más blanco que el blanco» (componentes > 1, sin tone mapping), para
+ * que superen el umbral del bloom y brillen.
+ */
+export const BODY_GLOW = 2.4;

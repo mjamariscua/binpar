@@ -8,6 +8,7 @@ import {
   boundsSide,
   buildBraid,
   cameraDirection,
+  frameDistance,
   nextLap,
   parseView,
   projectPoint,
@@ -135,6 +136,15 @@ describe("cámara y proyección", () => {
     const flat = projectStrand(strand, BRAID_VIEWS.lateral);
     expect(flat).toHaveLength((strand.length / 3) * 2);
     expect([flat[2], flat[3]]).toEqual(projectPoint(strand[3], strand[4], strand[5], BRAID_VIEWS.lateral));
+  });
+
+  it("frameDistance encuadra por el campo de visión más estrecho", () => {
+    // Con 90° y visor cuadrado, una esfera de radio 1 cabe a √2 (tangente al borde).
+    expect(frameDistance(1, 90, 1)).toBeCloseTo(Math.SQRT2, 12);
+    // En un visor alto (aspect < 1), el horizontal es más estrecho: hay que alejarse más.
+    expect(frameDistance(1, 90, 0.5)).toBeGreaterThan(frameDistance(1, 90, 1));
+    // En uno ancho manda el vertical: igual que el cuadrado.
+    expect(frameDistance(1, 90, 2)).toBeCloseTo(frameDistance(1, 90, 1), 12);
   });
 
   it("sliceFrame da las cuatro esquinas del recorrido en ese instante", () => {

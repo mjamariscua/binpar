@@ -156,6 +156,18 @@ export function projectPoint(X: number, Y: number, Z: number, view: BraidView): 
   return [right, up];
 }
 
+/**
+ * Distancia a la que poner una cámara en perspectiva para que una esfera de
+ * radio `radius` quepa entera, sea cual sea la dirección desde la que se mire:
+ * se encuadra por el campo de visión más estrecho (el vertical o, en un
+ * visor más alto que ancho, el horizontal).
+ */
+export function frameDistance(radius: number, fovDeg: number, aspect: number): number {
+  const vertical = (fovDeg * Math.PI) / 180;
+  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * aspect);
+  return radius / Math.sin(Math.min(vertical, horizontal) / 2);
+}
+
 /** Proyecta una hebra entera a una lista plana [x0, y0, x1, y1, …], lista para simplificar y pasar a SVG. */
 export function projectStrand(strand: Float32Array, view: BraidView): number[] {
   const out: number[] = new Array((strand.length / 3) * 2);

@@ -9,7 +9,7 @@ import { SceneEffects } from "@/components/scene/scene-effects";
 import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
-import { BODY_COLORS, SCENE_BACKGROUND } from "@/lib/orbits/colors";
+import { BODY_COLORS, BODY_GLOW, SCENE_BACKGROUND } from "@/lib/orbits/colors";
 import { bodyPath, orbitBounds, padBounds } from "@/lib/orbits/geometry";
 import { loadTrajectory } from "@/lib/orbits/load-trajectory";
 import { INITIAL_PLAYBACK } from "@/lib/orbits/playback";
@@ -25,11 +25,6 @@ const PATH_MIN_SEGMENT = 0.001;
 /** La estela cubre este tramo del periodo detrás de cada cuerpo. */
 const TRAIL_FRACTION = 0.16;
 const TRAIL_POINTS = 160;
-/**
- * Los cuerpos se pintan con un color «más blanco que el blanco» (componentes
- * > 1, sin tone mapping) para que superen el umbral del bloom y brillen.
- */
-const GLOW = 2.4;
 
 /**
  * Simulación de una órbita. Se carga con React.lazy (three.js solo se descarga
@@ -94,7 +89,7 @@ function Bodies({ slug, trajectory, radius }: { slug: OrbitSlug; trajectory: Tra
   const state = useMemo(() => new Float64Array(trajectory.bodyCount * STRIDE), [trajectory]);
   const trailXY = useMemo(() => BODY_COLORS.map(() => new Float32Array(TRAIL_POINTS * 2)), []);
   const trails = useMemo(() => BODY_COLORS.map((color) => new FadingTrail(color, TRAIL_POINTS, 2.5)), []);
-  const glowColors = useMemo(() => BODY_COLORS.map((c) => new Color(c).multiplyScalar(GLOW)), []);
+  const glowColors = useMemo(() => BODY_COLORS.map((c) => new Color(c).multiplyScalar(BODY_GLOW)), []);
 
   useEffect(() => () => trails.forEach((t) => t.dispose()), [trails]);
   useEffect(() => trails.forEach((t) => t.setResolution(size.width, size.height)), [trails, size]);
