@@ -6,11 +6,11 @@ import { use, useEffect, useMemo, useRef } from "react";
 import { AdditiveBlending, Color, type Mesh } from "three";
 import { FadingTrail } from "@/components/scene/fading-trail";
 import { SceneEffects } from "@/components/scene/scene-effects";
-import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
+import type { Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
 import type { OrbitSlug } from "@/lib/orbits/catalog";
 import { BODY_COLORS, BODY_GLOW, SCENE_BACKGROUND } from "@/lib/orbits/colors";
-import { bodyPath, orbitBounds, padBounds } from "@/lib/orbits/geometry";
+import { bodyPath, orbitBounds, padBounds, sampleTrails, to3D } from "@/lib/orbits/geometry";
 import { loadTrajectory } from "@/lib/orbits/load-trajectory";
 import { INITIAL_PLAYBACK } from "@/lib/orbits/playback";
 import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
@@ -134,31 +134,4 @@ function Bodies({ slug, trajectory, radius }: { slug: OrbitSlug; trajectory: Tra
       ))}
     </>
   );
-}
-
-/**
- * Rellena la estela de cada cuerpo con sus posiciones en [time − span, time],
- * de la cola (más antiguo) a la cabeza. Al terminar, `state` contiene el
- * estado en `time`, que es donde se dibujan los cuerpos.
- */
-function sampleTrails(trajectory: Trajectory, time: number, span: number, state: Float64Array, trails: Float32Array[]) {
-  const points = trails[0].length / 2;
-  for (let i = 0; i < points; i++) {
-    stateAt(trajectory, time - span + (span * i) / (points - 1), state);
-    for (let b = 0; b < trails.length; b++) {
-      trails[b][i * 2] = state[b * STRIDE];
-      trails[b][i * 2 + 1] = state[b * STRIDE + 1];
-    }
-  }
-}
-
-/** [x0, y0, x1, y1, …] → [x0, y0, 0, x1, y1, 0, …], el formato plano que espera <Line>. */
-function to3D(flat: readonly number[]): number[] {
-  const out = new Array<number>((flat.length / 2) * 3);
-  for (let i = 0, j = 0; i < flat.length; i += 2, j += 3) {
-    out[j] = flat[i];
-    out[j + 1] = flat[i + 1];
-    out[j + 2] = 0;
-  }
-  return out;
 }

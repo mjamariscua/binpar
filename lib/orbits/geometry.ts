@@ -1,4 +1,4 @@
-import type { Trajectory } from "@/lib/physics/trajectory";
+import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
 
 /**
@@ -140,4 +140,31 @@ export function svgPathData(points: readonly number[], decimals = 3): string {
 /** Atributo `viewBox` de un SVG que encuadra `b`, con el eje y invertido como en svgPathData. */
 export function svgViewBox(b: Bounds, decimals = 3): string {
   return [b.minX, -b.maxY, b.maxX - b.minX, b.maxY - b.minY].map((v) => v.toFixed(decimals)).join(" ");
+}
+
+/**
+ * Rellena la estela de cada cuerpo con sus posiciones en [time − span, time],
+ * de la cola (más antiguo) a la cabeza. Al terminar, `state` contiene el
+ * estado en `time`, que es donde se dibujan los cuerpos.
+ */
+export function sampleTrails(trajectory: Trajectory, time: number, span: number, state: Float64Array, trails: Float32Array[]) {
+  const points = trails[0].length / 2;
+  for (let i = 0; i < points; i++) {
+    stateAt(trajectory, time - span + (span * i) / (points - 1), state);
+    for (let b = 0; b < trails.length; b++) {
+      trails[b][i * 2] = state[b * STRIDE];
+      trails[b][i * 2 + 1] = state[b * STRIDE + 1];
+    }
+  }
+}
+
+/** [x0, y0, x1, y1, …] → [x0, y0, 0, x1, y1, 0, …], el formato plano que espera <Line> de drei. */
+export function to3D(flat: readonly number[]): number[] {
+  const out = new Array<number>((flat.length / 2) * 3);
+  for (let i = 0, j = 0; i < flat.length; i += 2, j += 3) {
+    out[j] = flat[i];
+    out[j + 1] = flat[i + 1];
+    out[j + 2] = 0;
+  }
+  return out;
 }

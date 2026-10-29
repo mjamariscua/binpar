@@ -6,9 +6,11 @@ import { boundsSide } from "./braid";
 import { ORBITS, getOrbit, initialStateOf } from "./catalog";
 import { orbitBounds } from "./geometry";
 import {
+  BODY_RADIUS_PER_SIDE,
   EYE_HEIGHT_PER_SIDE,
   HOLD_PER_SIDE,
   PITCH_LIMIT,
+  baseYaw,
   bearing,
   centerOfMass,
   clampPitch,
@@ -16,6 +18,7 @@ import {
   followYaw,
   formatViewpoint,
   gazeTargetYaw,
+  initialYaw,
   lookVector,
   parsePlayerView,
   parseViewpoint,
@@ -53,8 +56,10 @@ describe.each(ORBITS)("$name: desde dentro", (orbit) => {
         eyePosition(state, orbit.system.masses, from, side * EYE_HEIGHT_PER_SIDE, eye);
         for (let b = 0; b < 3; b++) {
           planeToWorld(state[b * STRIDE], state[b * STRIDE + 1], 0, body);
-          // Radio de los cuerpos en la escena: 0,02 × lado. El ojo nunca a menos de 3 radios.
-          expect(Math.hypot(eye[0] - body[0], eye[1] - body[1], eye[2] - body[2])).toBeGreaterThan(3 * 0.02 * side);
+          // El ojo nunca a menos de 3 radios de un cuerpo.
+          expect(Math.hypot(eye[0] - body[0], eye[1] - body[1], eye[2] - body[2])).toBeGreaterThan(
+            3 * BODY_RADIUS_PER_SIDE * side,
+          );
         }
       }
     }
@@ -143,6 +148,56 @@ describe("followYaw", () => {
       if (frames > 1000) throw new Error("no se engancha");
     }
     expect(frames).toBeGreaterThan(30);
+  });
+});
+
+describe("mirada al llegar y en cada fotograma", () => {
+  it("desde el centro se empieza mirando al cuerpo 1", () => {
+    const { orbit, traj } = trajectoryOf("lagrange");
+    const state = new Float64Array(traj.bodyCount * STRIDE);
+    stateAt(traj, 0, state);
+    expect(initialYaw(state, orbit.system.masses, "centro", 0.01, new Float64Array(2))).toBeCloseTo(
+      bearing(0, 0, state[0], state[1]),
+      9,
+    );
+  });
+
+  it("el cuerpo 3 arranca en el centro: la mirada inicial es la que tendrá al alejarse (sin media vuelta)", () => {
+    const { orbit, traj } = trajectoryOf("figura-de-ocho");
+    const state = new Float64Array(traj.bodyCount * STRIDE);
+    const scratch = new Float64Array(2);
+    const hold = boundsSide(orbitBounds(traj)) * HOLD_PER_SIDE;
+    stateAt(traj, 0, state);
+    const start = initialYaw(state, orbit.system.masses, 2, hold, scratch);
+    let target: number | null = null;
+    for (let t = 0; target === null; t += traj.period / 2000) {
+      stateAt(traj, t, state);
+      target = gazeTargetYaw(state, orbit.system.masses, 2, hold, scratch);
+    }
+    expect(Math.abs(wrapAngle(target - start))).toBeLessThan((5 * Math.PI) / 180);
+  });
+
+  it("«Mirada fija» no cambia mientras el cuerpo se mueve; «Al centro» lo sigue (Lagrange)", () => {
+    const { orbit, traj } = trajectoryOf("lagrange");
+    const state = new Float64Array(traj.bodyCount * STRIDE);
+    const scratch = new Float64Array(2);
+    const dt = traj.period / SAMPLES;
+    stateAt(traj, 0, state);
+    const start = initialYaw(state, orbit.system.masses, 0, 0.03, scratch);
+    let fixed: Follow | null = null;
+    let follow: Follow | null = null;
+    for (let i = 0; i < SAMPLES; i++) {
+      stateAt(traj, i * dt, state);
+      const input = { state, masses: orbit.system.masses, from: 0, hold: 0.03 } as const;
+      fixed = baseYaw(fixed, { ...input, gaze: "fija" }, dt, scratch);
+      follow = baseYaw(follow, { ...input, gaze: "centro" }, dt, scratch);
+      expect(fixed.yaw).toBe(start);
+      expect(follow.yaw).toBeCloseTo(gazeTargetYaw(state, orbit.system.masses, 0, 0.03, scratch)!, 9);
+    }
+  });
+
+  it("con tau = 0 (reducir movimiento) salta al objetivo, también con dt = 0", () => {
+    expect(followYaw({ yaw: 0, locked: false }, 2, 0, { tau: 0 })).toEqual({ yaw: 2, locked: true });
   });
 });
 

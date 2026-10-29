@@ -41,6 +41,8 @@ export const DEFAULT_PITCH = deg(-12);
 export const PITCH_LIMIT = deg(80);
 /** Distancia al centro de masas, en lados de la órbita, por debajo de la cual «mirar al centro» se retiene. */
 export const HOLD_PER_SIDE = 0.03;
+/** Radio de los cuerpos en la escena, en lados de la órbita. */
+export const BODY_RADIUS_PER_SIDE = 0.02;
 
 export function parsePlayerView(value: string | null | undefined): PlayerView {
   return value === "3d" || value === "dentro" ? value : "2d";
@@ -51,8 +53,11 @@ export function parseViewpoint(value: string | null | undefined): Viewpoint {
   return value === "1" ? 0 : value === "2" ? 1 : value === "3" ? 2 : "centro";
 }
 
-export function formatViewpoint(viewpoint: Viewpoint): string {
-  return viewpoint === "centro" ? "centro" : String(viewpoint + 1);
+/** Valor de `?desde=` en la URL. */
+export type ViewpointParam = "centro" | "1" | "2" | "3";
+
+export function formatViewpoint(viewpoint: Viewpoint): ViewpointParam {
+  return viewpoint === "centro" ? "centro" : viewpoint === 0 ? "1" : viewpoint === 1 ? "2" : "3";
 }
 
 /** Centro de masas en el plano de la órbita: [x, y] en `out`. */
@@ -148,8 +153,61 @@ export function followYaw(
   if (target === null) return { yaw: prev.yaw, locked: false };
   const diff = wrapAngle(target - prev.yaw);
   if (prev.locked && Math.abs(diff) <= jump) return { yaw: target, locked: true };
-  const yaw = wrapAngle(prev.yaw + diff * (1 - Math.exp(-dt / tau)));
+  // tau = 0 (con «reducir movimiento»): salta al objetivo sin transición.
+  const step = tau > 0 ? 1 - Math.exp(-dt / tau) : 1;
+  const yaw = wrapAngle(prev.yaw + diff * step);
   return Math.abs(wrapAngle(target - yaw)) <= settle ? { yaw: target, locked: true } : { yaw, locked: false };
+}
+
+/**
+ * Mirada al llegar a un punto de vista, y la que conserva «Mirada fija».
+ * - Desde el centro: hacia el cuerpo 1.
+ * - Sobre un cuerpo: hacia el centro de masas. Si el cuerpo está justo en el
+ *   centro (el cuerpo 3 en t = 0), hacia atrás de su movimiento: es donde
+ *   quedará el centro al alejarse, y así la mirada no da media vuelta al arrancar.
+ */
+export function initialYaw(
+  state: StateVector,
+  masses: readonly number[],
+  from: Viewpoint,
+  hold: number,
+  scratch: Float64Array,
+): number {
+  if (from === "centro") {
+    centerOfMass(state, masses, scratch);
+    return bearing(scratch[0], scratch[1], state[0], state[1]);
+  }
+  const toCenter = gazeTargetYaw(state, masses, from, hold, scratch);
+  if (toCenter !== null) return toCenter;
+  return Math.atan2(-state[from * STRIDE + 3], -state[from * STRIDE + 2]);
+}
+
+/** Lo que decide la mirada base en cada fotograma. */
+export interface GazeInput {
+  readonly state: StateVector;
+  readonly masses: readonly number[];
+  readonly from: Viewpoint;
+  readonly gaze: Gaze;
+  /** Distancia de retención al centro (HOLD_PER_SIDE × lado). */
+  readonly hold: number;
+}
+
+/**
+ * Ángulo base de la mirada en este fotograma, antes de lo que gire la persona.
+ * - `prev` null: recién llegado a este punto de vista; arranca en initialYaw,
+ *   sin transición (el ojo también salta).
+ * - Desde el centro, o con «Mirada fija»: no cambia; solo se desplaza el ojo.
+ * - Sobre un cuerpo mirando al centro: lo sigue con followYaw.
+ */
+export function baseYaw(prev: Follow | null, input: GazeInput, dt: number, scratch: Float64Array, tau?: number): Follow {
+  const { state, masses, from, gaze, hold } = input;
+  if (prev === null) {
+    // Enganchada desde el primer fotograma, salvo en retención: ahí espera a que aparezca el objetivo.
+    const locked = from !== "centro" && gazeTargetYaw(state, masses, from, hold, scratch) !== null;
+    return { yaw: initialYaw(state, masses, from, hold, scratch), locked };
+  }
+  if (from === "centro" || gaze === "fija") return prev;
+  return followYaw(prev, gazeTargetYaw(state, masses, from, hold, scratch), dt, { tau });
 }
 
 /** Dirección de la mirada en el mundo para un yaw (en el plano de la órbita) y una inclinación: vector unitario. */
