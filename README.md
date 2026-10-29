@@ -21,7 +21,7 @@ Requisitos: Node ≥ 20.9 y pnpm 10 (`corepack enable`).
 ```bash
 pnpm install
 pnpm dev              # http://localhost:3000
-pnpm test             # 167 tests (física, órbitas, trenza, primera persona, tutor, API, formato)
+pnpm test             # 203 tests (física, órbitas, trenza, primera persona, esfera de formas, tutor, API, formato)
 pnpm typecheck
 pnpm lint
 pnpm orbits:report    # cierre, energía y coste de cada órbita
@@ -87,7 +87,7 @@ dice en qué capítulo estás y deja saltar entre ellos.
 - **Detalle**: simulación con estelas, play/pausa, scrub, velocidad y reinicio
   (todo por teclado); panel con condiciones iniciales, periodo, energía,
   momento angular, **error de cierre medido** y fuentes.
-- **Vista 2D | 3D** en la galería y en el detalle: en 3D, la órbita como
+- **Vistas 2D, 3D y «Forma»** en la galería y en el detalle. En 3D, la órbita como
   **trenza en el tiempo** (una hebra por cuerpo durante dos periodos, con el
   corte del instante actual), la idea con la que Moore (1993) clasificó estas
   órbitas. En el detalle se puede girar, con vistas fijas como alternativa
@@ -98,6 +98,15 @@ dice en qué capítulo estás y deja saltar entre ellos.
   relativo: en Lagrange los otros dos parecen quietos, porque el triángulo gira
   contigo. Se mira alrededor arrastrando, con las flechas o con botones, y
   también va en la URL (`?vista=dentro&desde=2`).
+- **Vista «Forma»**: la **esfera de formas**, la forma del triángulo de los
+  tres cuerpos sin su posición, su tamaño ni su giro. Sus 6 coordenadas quedan
+  en 4 sin el centro de masas (el espacio de cuatro dimensiones del que sale la
+  esfera) y en 2 sin tamaño ni giro: un punto de una esfera. Cada órbita dibuja
+  ahí una curva. Lagrange es un punto quieto en el polo, y los nombres
+  Butterfly, Moth, Goggles y Yin-Yang describen la figura que trazan aquí, como
+  en la Fig. 1 de Šuvakov y Dmitrašinović (2013). En el detalle se gira, con
+  vistas «De frente» y «Desde el polo», un recuadro dibuja «la forma ahora» y
+  la vista va en la URL (`?vista=forma`).
 - **Estado conservado** al volver a la galería: filtro, vista, scroll y foco en
   la tarjeta abierta; y cada órbita recuerda su instante y su velocidad.
 - **Explorador**: eliges la velocidad inicial, se mide cuánto vuelve el sistema
@@ -111,10 +120,11 @@ components/gravity/        capítulos de la Parte A
 components/three-body/     galería, detalle y escena de la Parte B
 components/explorer/       explorador de órbitas
 components/tutor/          diagnóstico, chat, laboratorio, modo sin clave
-components/scene/          bloom y estelas compartidos por las escenas 3D
+components/scene/          bloom, estelas y cámara compartidos por las escenas 3D
 lib/physics/               física pura (sin React): RK4, N cuerpos, invariantes,
                            periodo precomputado, Kepler, búsqueda de retorno
-lib/orbits/                catálogo con fuentes, geometría, worker y caché
+lib/orbits/                catálogo con fuentes, geometría, worker y caché; las
+                           vistas: trenza, primera persona y esfera de formas
 lib/gravity/               cifras Tierra–Luna, fórmula y sandbox
 lib/tutor/                 proveedor, prompt, herramientas, diagnóstico, rate limit
 lib/store/                 estado (zustand): galería, reproducción, laboratorio
@@ -138,10 +148,13 @@ scripts/                   informes reproducibles de las órbitas
 | **Tarjetas vivas en SVG** (no WebGL) | Seis contextos WebGL son caros y los navegadores los limitan; un bucle rAF por tarjeta, solo si está en pantalla | Estelas en tramos de opacidad (SVG no degrada a lo largo de un trazo) |
 | **3D como trenza en el tiempo**, no como física 3D | Las seis órbitas son planas: una física 3D (unos 15 archivos) no cambiaría nada visible. Con el tiempo como tercera dimensión, la periodicidad se ve como una trenza que se repite. Sale del periodo ya precomputado, sin física nueva | Se dibuja la trenza, pero no se calcula su «palabra de trenza» (la clasificación de Moore) |
 | **Trenza de las tarjetas en SVG proyectado**; WebGL solo en el detalle | Misma razón que las tarjetas vivas; la proyección y la simplificación se hacen en el servidor | Las tarjetas no se pueden girar; ≈ 10 KB comprimidos más en el payload de la galería |
-| **Girar la trenza y mirar «Dentro» con el dedo solo tras activarlo** | Girar con el dedo exige `touch-action: none` en el canvas, que bloquearía el scroll de la página en móvil | En táctil, un toque más; las vistas fijas y los botones funcionan siempre |
+| **Girar la trenza y la esfera, y mirar «Dentro», con el dedo solo tras activarlo** | Girar con el dedo exige `touch-action: none` en el canvas, que bloquearía el scroll de la página en móvil | En táctil, un toque más; las vistas fijas y los botones funcionan siempre |
 | **«Dentro» solo en el detalle**; la galería la muestra y la deja como 2D | Es la misma órbita plana vista desde dentro, y seis escenas WebGL en las tarjetas son lo que ya se descartó por coste | Al volver a la galería desde «Dentro», la vista pasa a 2D |
 | **Mirada «al centro» con retención** junto al centro de masas | El cuerpo 3 arranca justo en el centro en cinco de las seis órbitas y en el ocho los tres lo cruzan: ahí la dirección «al centro» no existe y la cámara giraría 180° de golpe | Al cruzar el centro, la mirada da media vuelta suave (≈ 1 s); «Mirada fija» la evita |
 | **Estrellas fijas, «Mirada fija», sin alabeo, inclinación ±80°** | Una referencia que no gira hace legible el movimiento relativo y reduce el mareo; con la mirada fija se ve la diferencia entre el marco que gira y el inercial | Las estrellas no parpadean (el parpadeo de drei es un pulso común a todas) |
+| **Cuarta capa: la esfera de formas**, no la hiperesfera de 4D | Sin el centro de masas quedan 4 dimensiones; sin tamaño ni giro (proyección de Hopf), una esfera que distingue a cada órbita. Es la representación con la que las clasificaron Šuvakov y Dmitrašinović (PRL 110, 114301, 2013), con los ejes de Janković, Dmitrašinović y Šuvakov (CPC 250, 107052, 2020). La hiperesfera se puede dibujar (la fibración de Hopf), pero cuesta leerla | En esta vista no se ven el tamaño ni el giro (sí en 2D). Se dibuja la curva, pero no se calcula su «palabra» topológica (ver «Límites») |
+| **Esfera en SVG en la galería**; WebGL solo en el detalle | Como la trenza: la curva se proyecta y se simplifica en el servidor, y solo viaja la de cada órbita; contorno, ecuador y choques son comunes | ≈ 5 KB comprimidos más en la galería (medido). La escena, ≈ 16 KB comprimidos, solo se descarga al elegir «Forma» |
+| **Reverso de la esfera atenuado con un velo** | Sin el reverso, media curva desaparece. Un velo del color del fondo, translúcido y dibujado al final, atenúa lo de detrás y deja intacto lo de delante, como la esfera translúcida de la Fig. 1 de 2013 | Las líneas van a radio 1,004, un poco por fuera de la superficie, y la estela y el halo del punto tienen que escribir profundidad |
 | **Estado del laboratorio compartido** por persona y tutor (zustand, mismas acciones) | El tutor no tiene un camino propio: solo puede hacer lo que permite la interfaz | Estado global de módulo (vive mientras la pestaña) |
 | **Herramientas del tutor ejecutadas en el cliente** (sin `execute` en el servidor) | Lo que cambian es la interfaz; el navegador devuelve al modelo los datos reales | Cada respuesta con herramienta son 2–3 peticiones |
 | **Proveedor autodetectado** y **modelo rápido** por defecto | El equipo revisará con su clave, sea cual sea; en un chat pesa la latencia | Algo menos de calidad que un modelo grande (`LLM_MODEL` lo cambia) |
@@ -158,12 +171,16 @@ scripts/                   informes reproducibles de las órbitas
 
 ## Verificación
 
-- **167 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
+- **203 tests** (Vitest): orden 4 del integrador y de Hermite, leyes de Newton,
   cierre y conservación de energía de **cada órbita**, comparación de fuentes,
   clasificación de órbitas, la trenza (cada hebra vuelve a su posición en T y
   en 2T, proyecciones y encuadre de cámara), la vista «Dentro» (centro de masas
   quieto en las seis órbitas; en Lagrange, desde un cuerpo, los otros dos a ±30°
-  y a distancia constante; retención en el centro y giro suave), cifras
+  y a distancia constante; retención en el centro y giro suave), la esfera de
+  formas (no cambia al mover, girar o escalar el triángulo; equilátero en los
+  polos y alineados en el ecuador; Lagrange quieta en el polo; las otras cinco
+  arrancan en el mismo punto, cruzan el ecuador, como exige el teorema de
+  Montgomery, nunca tocan un choque y cierran a menos de 10⁻⁷), cifras
   Tierra–Luna, descripciones de la galería
   (sus afirmaciones se comprueban), diagnóstico, proveedor, límite de
   peticiones, explorador (recupera los valores de Li & Liao partiendo de los
@@ -235,6 +252,12 @@ partir de mediciones y están documentadas arriba.
   que en el selector «Desde»), sin etiquetas en la escena. Viajar sobre un
   cuerpo puede marear: hay «Mirada fija», ½× y respeto a «reducir
   movimiento», pero no se ha probado con personas.
+- **Vista «Forma»:** se dibuja la curva de cada órbita en la esfera, pero no
+  se calcula su «palabra» topológica (la clasificación de la Tabla I de 2013).
+  Ni el artículo de 2013 ni el de 2020 publican la regla para pasar de la
+  curva a las letras, y lo medido descarta la más simple (una letra por cada
+  par de cruces del ecuador): la figura de ocho cruza 6 veces por periodo y su
+  palabra tiene 4 letras. Calibrarla sin la regla original sería adivinar.
 - **Sin tests E2E automatizados** (Playwright): la interfaz se verificó a mano
   en el navegador.
 - **Explorador:** un buen retorno es una candidata a órbita periódica, no una
