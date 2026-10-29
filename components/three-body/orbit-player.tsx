@@ -15,6 +15,7 @@ import {
   type Viewpoint,
   type ViewpointParam,
 } from "@/lib/orbits/inside";
+import type { ShapeCameraName } from "@/lib/orbits/shape";
 import { parsePlayerView, type PlayerView } from "@/lib/orbits/views";
 import { useCoarsePointer } from "@/lib/hooks/use-coarse-pointer";
 import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
@@ -28,6 +29,7 @@ import { PlaybackControls } from "./playback-controls";
 const OrbitScene = lazy(() => import("./orbit-scene"));
 const BraidScene = lazy(() => import("./braid-scene"));
 const InsideScene = lazy(() => import("./inside-scene"));
+const ShapeScene = lazy(() => import("./shape-scene"));
 
 const VIEWS: readonly { value: PlayerView; label: string; ariaLabel: string }[] = [
   { value: "2d", label: "2D", ariaLabel: "2D: el recorrido en el plano" },
@@ -54,6 +56,11 @@ const VIEWPOINTS: readonly SegmentedOption<ViewpointParam>[] = [
 const GAZES: readonly SegmentedOption<Gaze>[] = [
   { value: "centro", label: "Al centro", ariaLabel: "Mirada al centro de masas" },
   { value: "fija", label: "Fija", ariaLabel: "Mirada fija respecto a las estrellas" },
+];
+
+const SHAPE_CAMERA_OPTIONS: readonly { value: ShapeCameraName; label: string }[] = [
+  { value: "frente", label: "De frente" },
+  { value: "polo", label: "Desde el polo" },
 ];
 
 const CAMERAS: readonly { value: BraidViewName; label: string }[] = [
@@ -115,6 +122,7 @@ export function OrbitPlayer({
   const gaze = useInsideStore((s) => s.gaze) ?? (reducedMotion ? "fija" : "centro");
   const setGaze = useInsideStore((s) => s.setGaze);
   const [camera, setCamera] = useState<BraidViewName | null>("perspectiva");
+  const [shapeCamera, setShapeCamera] = useState<ShapeCameraName | null>("frente");
   const [touchRotate, setTouchRotate] = useState(false);
   const [touchLook, setTouchLook] = useState(false);
   const viewLabelId = useId();
@@ -164,8 +172,7 @@ export function OrbitPlayer({
         style={{ background: SCENE_BACKGROUND }}
       >
         <div className="absolute inset-0">{is3D ? braidPoster : isShape ? shapePoster : poster}</div>
-        {/* En «Forma», por ahora, solo el dibujo estático: la escena de la esfera llega en el paso siguiente. */}
-        {isClient && !isShape && (
+        {isClient && (
           <ErrorBoundary
             fallback={(retry) => (
               <StatusOverlay>
@@ -179,7 +186,13 @@ export function OrbitPlayer({
             <Suspense
               fallback={
                 <StatusOverlay>
-                  {is3D ? "Preparando la trenza…" : inside ? "Preparando la vista desde dentro…" : "Calculando la órbita…"}
+                  {is3D
+                    ? "Preparando la trenza…"
+                    : inside
+                      ? "Preparando la vista desde dentro…"
+                      : isShape
+                        ? "Preparando la esfera…"
+                        : "Calculando la órbita…"}
                 </StatusOverlay>
               }
             >
@@ -191,6 +204,20 @@ export function OrbitPlayer({
                 >
                   <InsideScene slug={slug} masses={masses} from={from} gaze={gaze} />
                 </LookSurface>
+              ) : isShape ? (
+                <div
+                  className="absolute inset-0"
+                  role="img"
+                  aria-label={`${name} en la esfera de formas: la curva es cómo cambia la forma del triángulo durante el periodo y el punto, su forma en este instante, dibujada también en la esquina.`}
+                >
+                  <ShapeScene
+                    slug={slug}
+                    camera={shapeCamera}
+                    // En táctil, girar solo tras activarlo, como la trenza: OrbitControls bloquea el scroll sobre el canvas.
+                    interactive={!coarse || touchRotate}
+                    onRotateStart={() => setShapeCamera(null)}
+                  />
+                </div>
               ) : is3D ? (
                 <div
                   className="absolute inset-0"
@@ -264,6 +291,37 @@ export function OrbitPlayer({
             {coarse
               ? " Activa «Mirar con el dedo» para mirar alrededor, o usa los botones."
               : " Arrastra para mirar alrededor, o usa las flechas con la escena enfocada."}
+          </p>
+        </div>
+      )}
+      {isShape && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span id={cameraLabelId} className="text-sm text-muted-foreground">
+              Cámara
+            </span>
+            <Segmented
+              size="sm"
+              value={shapeCamera}
+              options={SHAPE_CAMERA_OPTIONS}
+              onChange={setShapeCamera}
+              aria-labelledby={cameraLabelId}
+            />
+            {coarse && (
+              <Button variant="outline" size="sm" aria-pressed={touchRotate} onClick={() => setTouchRotate((v) => !v)}>
+                <Rotate3d /> Girar con el dedo
+              </Button>
+            )}
+          </div>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            Cada punto de la esfera es una forma del triángulo, sin importar su tamaño ni hacia dónde apunte: en los polos,
+            equilátero; en el ecuador, los tres alineados, y el color del arco dice qué cuerpo queda en medio. Las bolitas
+            pareadas son choques de dos cuerpos.{" "}
+            {slug === "lagrange"
+              ? "En Lagrange el punto no se mueve del polo: el triángulo gira, pero su forma nunca cambia."
+              : "El punto es la forma de ahora, y el recuadro la dibuja."}
+            {coarse ? " Activa «Girar con el dedo» para girarla" : " Arrastra para girarla"}, o elige una vista: «Desde el
+            polo» enseña el hemisferio norte con los tres choques en el borde.
           </p>
         </div>
       )}

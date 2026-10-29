@@ -1,4 +1,4 @@
-import type { Trajectory } from "@/lib/physics/trajectory";
+import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE, type StateVector } from "@/lib/physics/types";
 
 /**
@@ -27,6 +27,8 @@ import { STRIDE, type StateVector } from "@/lib/physics/types";
 const SQRT3_2 = Math.sqrt(3) / 2;
 /** Búfer de trabajo de shapePoint, para no reservar memoria en cada fotograma (el worker tiene su propia copia del módulo). */
 const JACOBI = new Float64Array(4);
+/** Búfer de trabajo de sampleShapeTrail, por el mismo motivo. */
+const TRAIL_POINT = new Float64Array(3);
 
 /** Vectores de Jacobi ρ = (r₁ − r₂)/√2 y λ = (r₁ + r₂ − 2r₃)/√6, como [ρx, ρy, λx, λy]. */
 export function jacobi(state: StateVector, out: Float64Array): Float64Array {
@@ -121,6 +123,29 @@ export function shapeCurve(trajectory: Trajectory): Float64Array {
     out[k * 3 + 2] = point[2];
   }
   return out;
+}
+
+/**
+ * La estela de la forma: los puntos de la esfera en [time − span, time], de
+ * la cola a la cabeza, en `out` ([x0, y0, z0, …], a radio `radius`). Al
+ * terminar, `state` es el estado en `time`: el de «la forma ahora».
+ */
+export function sampleShapeTrail(
+  trajectory: Trajectory,
+  time: number,
+  span: number,
+  state: StateVector,
+  out: Float32Array | Float64Array,
+  radius = 1,
+): void {
+  const points = out.length / 3;
+  for (let i = 0; i < points; i++) {
+    stateAt(trajectory, time - span + (span * i) / (points - 1), state);
+    shapePoint(state, TRAIL_POINT);
+    out[i * 3] = TRAIL_POINT[0] * radius;
+    out[i * 3 + 1] = TRAIL_POINT[1] * radius;
+    out[i * 3 + 2] = TRAIL_POINT[2] * radius;
+  }
 }
 
 /**
@@ -253,4 +278,53 @@ export function equatorArc(middle: number, segments = 48): number[] {
     points.push(Math.cos(angle), Math.sin(angle), 0);
   }
   return points;
+}
+
+/* ─── Escena del detalle ────────────────────────────────────────────────── */
+
+/**
+ * Vistas fijas de la escena. «De frente» es la del dibujo de la galería, así
+ * que la transición de la tarjeta al detalle no salta; «Desde el polo» enseña
+ * todo el hemisferio norte con el ecuador y los tres choques en el borde.
+ */
+export const SHAPE_CAMERAS = {
+  frente: SHAPE_VIEW,
+  // 89° y no 90°: mirando justo desde el polo, el «arriba» de la cámara quedaría indefinido.
+  polo: { azimuth: -90, elevation: 89 },
+} as const satisfies Record<string, SphereView>;
+
+export type ShapeCameraName = keyof typeof SHAPE_CAMERAS;
+
+/**
+ * Un punto de la esfera en el mundo de la escena: [x, z, −y], con el polo
+ * norte arriba (+Y). Es exactamente el giro de −π/2 en X del grupo que
+ * contiene la esfera, así que todo se dibuja dentro en coordenadas de la esfera.
+ */
+export function sphereToWorld(x: number, y: number, z: number): [number, number, number] {
+  return [x, z, -y];
+}
+
+/** Dirección unitaria, en el mundo, del centro de la esfera hacia la cámara de una vista. */
+export function cameraDirectionWorld(view: SphereView): [number, number, number] {
+  const [x, y, z] = viewAxes(view).toward;
+  return sphereToWorld(x, y, z);
+}
+
+/**
+ * Aligera una curva [x0, y0, z0, …] para dibujarla: descarta cada punto a
+ * menos de `minDistance` del último conservado (el criterio de bodyPath y de
+ * la trenza) y conserva siempre el último, para que la curva cierre. Devuelve
+ * un array plano, que es lo que espera <Line> de drei.
+ */
+export function thinCurve(points: ArrayLike<number>, minDistance: number): number[] {
+  const out: number[] = [];
+  let [lx, ly, lz] = [Infinity, Infinity, Infinity];
+  for (let i = 0; i < points.length; i += 3) {
+    const [x, y, z] = [points[i], points[i + 1], points[i + 2]];
+    if (i === points.length - 3 || Math.hypot(x - lx, y - ly, z - lz) >= minDistance) {
+      out.push(x, y, z);
+      [lx, ly, lz] = [x, y, z];
+    }
+  }
+  return out;
 }

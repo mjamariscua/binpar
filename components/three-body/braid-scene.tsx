@@ -4,6 +4,7 @@ import { Line, OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { use, useEffect, useMemo, useRef } from "react";
 import { Color, DoubleSide, Vector3, type BufferAttribute, type Group, type Mesh } from "three";
+import { CameraRig } from "@/components/scene/camera-rig";
 import { SceneEffects } from "@/components/scene/scene-effects";
 import { stateAt, type Trajectory } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
@@ -32,8 +33,6 @@ const FOV = 35;
 const FRAME_MARGIN = 1.06;
 /** Radio de los cuerpos, como fracción del lado de la órbita. */
 const BODY_RADIUS = 0.022;
-/** Constante de tiempo del cambio de vista de cámara, en segundos. */
-const CAMERA_SMOOTHING = 0.12;
 
 export interface BraidSceneProps {
   slug: OrbitSlug;
@@ -102,6 +101,9 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
     [bounds, lengthPerPeriod, periods],
   );
   const aspect = size.width / size.height;
+  // Cada vista encuadra lo que se ve desde ella: de frente, la cara de la órbita; en lateral, la trenza entera.
+  const direction = useMemo(() => (camera === null ? null : cameraDirection(BRAID_VIEWS[camera])), [camera]);
+  const distance = camera === null ? 0 : viewDistance(half, BRAID_VIEWS[camera], FOV, aspect) * FRAME_MARGIN;
   // Planos de recorte con la esfera que contiene la trenza: valen para cualquier giro.
   const sphereDistance = frameDistance(Math.hypot(...half), FOV, aspect);
 
@@ -120,7 +122,7 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
   return (
     <>
       <PerspectiveCamera makeDefault fov={FOV} near={sphereDistance / 50} far={sphereDistance * 10} />
-      <CameraRig target={target} half={half} aspect={aspect} camera={camera} reducedMotion={reducedMotion} />
+      <CameraRig target={target} direction={direction} distance={distance} reducedMotion={reducedMotion} />
       {interactive && (
         <OrbitControls
           makeDefault
@@ -154,59 +156,6 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
       />
     </>
   );
-}
-
-/**
- * Coloca la cámara en la vista fija elegida, con una transición suave (o un
- * salto, con «reducir movimiento»). Si la persona gira a mano (camera = null),
- * no toca nada: manda OrbitControls.
- */
-function CameraRig({
-  target,
-  half,
-  aspect,
-  camera,
-  reducedMotion,
-}: {
-  target: Vector3;
-  half: readonly [number, number, number];
-  aspect: number;
-  camera: BraidViewName | null;
-  reducedMotion: boolean;
-}) {
-  const invalidate = useThree((s) => s.invalidate);
-  const goal = useMemo(() => new Vector3(), []);
-  const arrived = useRef(false);
-  // Cada vista encuadra lo que se ve desde ella: de frente, la cara de la órbita; en lateral, la trenza entera.
-  const distance = camera === null ? 0 : viewDistance(half, BRAID_VIEWS[camera], FOV, aspect) * FRAME_MARGIN;
-
-  useEffect(() => {
-    arrived.current = false;
-    invalidate();
-  }, [camera, distance, target, invalidate]);
-
-  useFrame((state, delta) => {
-    if (camera === null || arrived.current) return;
-    const [dx, dy, dz] = cameraDirection(BRAID_VIEWS[camera]);
-    goal.set(target.x + dx * distance, target.y + dy * distance, target.z + dz * distance);
-    const cam = state.camera;
-    if (reducedMotion) {
-      cam.position.copy(goal);
-    } else {
-      cam.position.lerp(goal, 1 - Math.exp(-delta / CAMERA_SMOOTHING));
-    }
-    cam.lookAt(target);
-    if (cam.position.distanceToSquared(goal) < (distance * 1e-4) ** 2) {
-      cam.position.copy(goal);
-      cam.lookAt(target);
-      arrived.current = true;
-    } else {
-      // En pausa (frameloop "demand") la transición necesita pedir el siguiente fotograma.
-      invalidate();
-    }
-  });
-
-  return null;
 }
 
 /**

@@ -31,7 +31,12 @@ export class FadingTrail {
   private readonly positionAttribute: InterleavedBufferAttribute;
   private readonly colorAttribute: InterleavedBufferAttribute;
 
-  constructor(color: string, maxPoints: number, widthPx: number, z = 0.5) {
+  /**
+   * Con `depthWrite`, la estela escribe profundidad. La esfera de formas lo
+   * necesita: su velo translúcido atenúa lo que queda detrás de la esfera, y
+   * sin profundidad escrita taparía también la estela de la cara visible.
+   */
+  constructor(color: string, maxPoints: number, widthPx: number, z = 0.5, { depthWrite = false }: { depthWrite?: boolean } = {}) {
     this.rgb = new Color(color);
     this.maxPoints = maxPoints;
     this.material = new LineMaterial({
@@ -40,7 +45,7 @@ export class FadingTrail {
       vertexColors: true,
       transparent: true,
       blending: AdditiveBlending,
-      depthWrite: false,
+      depthWrite,
     });
     // Búferes del tamaño máximo: (maxPoints − 1) segmentos de [inicio xyz, fin xyz].
     const zeros = new Float32Array(maxPoints * 3);
@@ -57,21 +62,26 @@ export class FadingTrail {
     this.object.position.z = z;
   }
 
-  /** `xy` contiene `count` puntos [x0, y0, x1, y1, …] ordenados de la cola a la cabeza. */
-  update(xy: Float32Array | Float64Array, count: number): void {
+  /**
+   * `points` contiene `count` puntos ordenados de la cola a la cabeza:
+   * [x0, y0, x1, y1, …] en el plano (z = 0) o, con `dims` = 3, [x0, y0, z0, …].
+   */
+  update(points: Float32Array | Float64Array, count: number, dims: 2 | 3 = 2): void {
     const n = Math.min(count, this.maxPoints);
     const { r, g, b } = this.rgb;
     for (let i = 0; i < n - 1; i++) {
       const o = i * 6;
+      const a = i * dims;
+      const c = (i + 1) * dims;
       // La cola se apaga deprisa (t²); la cabeza conserva el color.
       const f0 = (i / (n - 1)) ** 2;
       const f1 = ((i + 1) / (n - 1)) ** 2;
-      this.segments[o] = xy[i * 2];
-      this.segments[o + 1] = xy[i * 2 + 1];
-      this.segments[o + 2] = 0;
-      this.segments[o + 3] = xy[i * 2 + 2];
-      this.segments[o + 4] = xy[i * 2 + 3];
-      this.segments[o + 5] = 0;
+      this.segments[o] = points[a];
+      this.segments[o + 1] = points[a + 1];
+      this.segments[o + 2] = dims === 3 ? points[a + 2] : 0;
+      this.segments[o + 3] = points[c];
+      this.segments[o + 4] = points[c + 1];
+      this.segments[o + 5] = dims === 3 ? points[c + 2] : 0;
       this.colors[o] = r * f0;
       this.colors[o + 1] = g * f0;
       this.colors[o + 2] = b * f0;

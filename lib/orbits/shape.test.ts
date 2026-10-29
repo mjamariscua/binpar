@@ -1,3 +1,4 @@
+import { Euler, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { precomputePeriod, stateAt } from "@/lib/physics/trajectory";
 import { STRIDE } from "@/lib/physics/types";
@@ -5,15 +6,20 @@ import { ORBITS, getOrbit, initialStateOf } from "./catalog";
 import {
   COLLISIONS,
   EULER_POINTS,
+  SHAPE_CAMERAS,
   SHAPE_VIEW,
+  cameraDirectionWorld,
   canonicalTriangle,
   equatorArc,
   jacobi,
   middleBody,
   projectSphere,
+  sampleShapeTrail,
   shapeCurve,
   shapePoint,
   sphereRuns,
+  sphereToWorld,
+  thinCurve,
   viewAxes,
 } from "./shape";
 
@@ -282,5 +288,57 @@ describe("dibujo de la esfera", () => {
       }
       for (let i = 1; i < 48; i++) expect(middleBody(at(i)[0], at(i)[1])).toBe(middle);
     }
+  });
+});
+
+describe("escena de la esfera", () => {
+  it("sphereToWorld es el giro −π/2 en X del grupo de la escena: el polo norte, arriba", () => {
+    for (const [x, y, z] of [[0, 0, 1], [0.3, -0.5, 0.81], [-1, 0.2, -0.4]]) {
+      const v = new Vector3(x, y, z).applyEuler(new Euler(-Math.PI / 2, 0, 0));
+      sphereToWorld(x, y, z).forEach((w, i) => expect(w).toBeCloseTo([v.x, v.y, v.z][i], 12));
+    }
+    expect(sphereToWorld(0, 0, 1)).toEqual([0, 1, -0]);
+  });
+
+  it("«De frente» ve la esfera como el dibujo de la galería: +x de la esfera a la derecha de la pantalla", () => {
+    const d = cameraDirectionWorld(SHAPE_CAMERAS.frente);
+    // Cámara en d mirando al centro con el «arriba» del mundo (+Y): derecha = adelante × arriba.
+    const [fx, fy, fz] = d.map((v) => -v);
+    const right = [fy * 0 - fz * 1, fz * 0 - fx * 0, fx * 1 - fy * 0];
+    const norm = Math.hypot(...right);
+    right.map((v) => v / norm).forEach((v, i) => expect(v).toBeCloseTo(sphereToWorld(1, 0, 0)[i], 12));
+  });
+
+  it("«Desde el polo» mira casi en vertical, sin llegar a la vertical exacta", () => {
+    const [, up] = cameraDirectionWorld(SHAPE_CAMERAS.polo);
+    expect(up).toBeGreaterThan(0.999);
+    expect(up).toBeLessThan(1);
+  });
+
+  it("thinCurve conserva el primero y el último, y separa los demás al menos lo pedido", () => {
+    const points: number[] = [];
+    for (let i = 0; i <= 1000; i++) points.push(Math.cos(i / 100), Math.sin(i / 100), 0);
+    const thin = thinCurve(points, 0.05);
+    expect(thin.slice(0, 3)).toEqual(points.slice(0, 3));
+    expect(thin.slice(-3)).toEqual(points.slice(-3));
+    for (let i = 3; i < thin.length - 3; i += 3) {
+      expect(Math.hypot(thin[i] - thin[i - 3], thin[i + 1] - thin[i - 2], thin[i + 2] - thin[i - 1])).toBeGreaterThanOrEqual(0.05);
+    }
+    expect(thin.length).toBeLessThan(points.length / 3);
+  });
+});
+
+describe("estela de la forma (sampleShapeTrail)", () => {
+  it("acaba en la forma de ahora, a la escala pedida, y deja el estado en ese instante", () => {
+    const orbit = getOrbit("figura-de-ocho")!;
+    const traj = trajectoryOf(orbit);
+    const state = new Float64Array(3 * STRIDE);
+    const out = new Float64Array(30 * 3);
+    sampleShapeTrail(traj, 1.7, 0.4, state, out, 1.004);
+    const expected = point(stateAt(traj, 1.7, new Float64Array(3 * STRIDE)));
+    expected.forEach((v, i) => expect(out[29 * 3 + i]).toBeCloseTo(v * 1.004, 12));
+    point(state).forEach((v, i) => expect(v).toBeCloseTo(expected[i], 12));
+    const tail = point(stateAt(traj, 1.3, new Float64Array(3 * STRIDE)));
+    tail.forEach((v, i) => expect(out[i]).toBeCloseTo(v * 1.004, 12));
   });
 });
