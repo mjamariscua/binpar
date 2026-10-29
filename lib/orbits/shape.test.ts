@@ -9,7 +9,6 @@ import {
   SHAPE_CAMERAS,
   SHAPE_VIEW,
   cameraDirectionWorld,
-  canonicalTriangle,
   equatorArc,
   jacobi,
   middleBody,
@@ -20,6 +19,7 @@ import {
   sphereRuns,
   sphereToWorld,
   thinCurve,
+  triangleNow,
   viewAxes,
 } from "./shape";
 
@@ -187,25 +187,30 @@ describe("las órbitas del catálogo", () => {
   });
 });
 
-describe("la forma ahora (canonicalTriangle)", () => {
-  const triangle = (state: Float64Array) => [...canonicalTriangle(state, new Float64Array(6))];
+describe("el triángulo ahora (triangleNow)", () => {
+  const triangle = (state: Float64Array) => [...triangleNow(state, new Float64Array(6))];
 
-  it("no depende de dónde esté el triángulo, de su tamaño ni de su giro; el reflejo lo refleja", () => {
+  it("no depende de dónde esté el triángulo ni de su tamaño; girarlo lo gira y reflejarlo lo refleja", () => {
     for (const state of randomStates(20)) {
       const base = triangle(state);
-      triangle(moved(state, { dx: -2, dy: 5, angle: -1.2, scale: 3.1 })).forEach((v, i) => expect(v).toBeCloseTo(base[i], 12));
+      triangle(moved(state, { dx: -2, dy: 5, scale: 3.1 })).forEach((v, i) => expect(v).toBeCloseTo(base[i], 12));
+      const angle = -1.2;
+      const turned = triangle(moved(state, { angle }));
+      for (let b = 0; b < 3; b++) {
+        const [x, y] = [base[b * 2], base[b * 2 + 1]];
+        expect(turned[b * 2]).toBeCloseTo(x * Math.cos(angle) - y * Math.sin(angle), 12);
+        expect(turned[b * 2 + 1]).toBeCloseTo(x * Math.sin(angle) + y * Math.cos(angle), 12);
+      }
       triangle(moved(state, { mirror: true })).forEach((v, i) => expect(v).toBeCloseTo(i % 2 ? -base[i] : base[i], 12));
     }
   });
 
-  it("tamaño 1, centrado, y el lado 1–2 horizontal con el cuerpo 1 a la izquierda", () => {
+  it("tamaño 1 y centrado", () => {
     for (const state of randomStates(20)) {
       const [x1, y1, x2, y2, x3, y3] = triangle(state);
       expect(x1 ** 2 + y1 ** 2 + x2 ** 2 + y2 ** 2 + x3 ** 2 + y3 ** 2).toBeCloseTo(1, 12);
       expect(x1 + x2 + x3).toBeCloseTo(0, 12);
       expect(y1 + y2 + y3).toBeCloseTo(0, 12);
-      expect(y2 - y1).toBeCloseTo(0, 12);
-      expect(x2).toBeGreaterThan(x1);
     }
   });
 
@@ -217,13 +222,27 @@ describe("la forma ahora (canonicalTriangle)", () => {
     }
   });
 
-  it("en Lagrange no cambia en todo el periodo", () => {
+  it("en Lagrange gira una vuelta por periodo sin deformarse, mientras su punto sigue quieto en el polo", () => {
     const traj = trajectoryOf(getOrbit("lagrange")!);
     const state = new Float64Array(3 * STRIDE);
-    const first = triangle(stateAt(traj, 0, state));
-    for (let i = 1; i < 64; i++) {
-      triangle(stateAt(traj, (traj.period * i) / 64, state)).forEach((v, j) => expect(v).toBeCloseTo(first[j], 9));
+    const point = new Float64Array(3);
+    const samples = 64;
+    let turned = 0;
+    let previous: number | null = null;
+    for (let i = 0; i <= samples; i++) {
+      stateAt(traj, (traj.period * i) / samples, state);
+      const [x1, y1, x2, y2, x3, y3] = triangle(state);
+      // Equilátero en todo momento: los tres lados iguales.
+      const side = Math.hypot(x2 - x1, y2 - y1);
+      expect(Math.hypot(x3 - x2, y3 - y2)).toBeCloseTo(side, 9);
+      expect(Math.hypot(x1 - x3, y1 - y3)).toBeCloseTo(side, 9);
+      expect(shapePoint(state, point)[2]).toBeCloseTo(1, 9);
+      // Ángulo del lado 1 → 2, acumulado sin saltos de ±2π.
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      if (previous !== null) turned += Math.atan2(Math.sin(angle - previous), Math.cos(angle - previous));
+      previous = angle;
     }
+    expect(Math.abs(turned)).toBeCloseTo(2 * Math.PI, 6);
   });
 });
 

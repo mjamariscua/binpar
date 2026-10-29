@@ -18,11 +18,11 @@ import {
   COLLISIONS,
   SHAPE_CAMERAS,
   cameraDirectionWorld,
-  canonicalTriangle,
   equatorArc,
   sampleShapeTrail,
   shapeCurve,
   thinCurve,
+  triangleNow,
   type ShapeCameraName,
 } from "@/lib/orbits/shape";
 import { useVisualQuality } from "@/lib/hooks/use-visual-quality";
@@ -69,8 +69,8 @@ export interface ShapeSceneProps {
  * La órbita en la esfera de formas, en 3D: la esfera translúcida con su
  * rejilla, el ecuador en tres colores (qué cuerpo queda en medio), los choques
  * de dos cuerpos, la curva completa y un punto con estela que la recorre: la
- * forma del triángulo en este instante. En una esquina, «la forma ahora»
- * dibuja ese mismo triángulo.
+ * forma del triángulo en este instante. En una esquina, «el triángulo ahora»
+ * lo dibuja con su giro, que la esfera no tiene en cuenta.
  *
  * Mismo patrón que BraidScene: React.lazy, `use()` hasta que el worker
  * entrega el periodo, un único useFrame que avanza el reloj del store de
@@ -213,7 +213,7 @@ function Equator() {
 }
 
 /**
- * El punto que recorre la curva, su estela y «la forma ahora». Un único
+ * El punto que recorre la curva, su estela y «el triángulo ahora». Un único
  * useFrame avanza el reloj del store (como en las otras escenas); nada de
  * esto provoca renders de React.
  */
@@ -239,10 +239,10 @@ function Moving({ slug, trajectory, now }: { slug: OrbitSlug; trajectory: Trajec
     const head = (TRAIL_POINTS - 1) * 3;
     point.current?.position.set(trailXYZ[head], trailXYZ[head + 1], trailXYZ[head + 2]);
 
-    // «La forma ahora»: el mismo instante, como triángulo (y hacia abajo en SVG).
+    // «El triángulo ahora»: el mismo instante, con su giro (y hacia abajo en SVG).
     const svg = now.current;
     if (svg) {
-      canonicalTriangle(state, triangle);
+      triangleNow(state, triangle);
       const [x1, y1, x2, y2, x3, y3] = triangle;
       const xy = (x: number, y: number) => `${x.toFixed(3)},${(-y).toFixed(3)}`;
       svg.querySelector("polygon")?.setAttribute("points", `${xy(x1, y1)} ${xy(x2, y2)} ${xy(x3, y3)}`);
@@ -286,14 +286,17 @@ function Veil() {
   );
 }
 
-/** «La forma ahora»: el triángulo de los tres cuerpos sin tamaño ni giro, el cuerpo 1 a la izquierda. */
+/**
+ * «El triángulo ahora»: los tres cuerpos centrados y a tamaño fijo, con su
+ * giro. En Lagrange gira mientras el punto de la esfera sigue quieto.
+ */
 function ShapeNow({ ref }: { ref: RefObject<SVGSVGElement | null> }) {
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute right-3 top-3 flex flex-col items-center gap-1 rounded-lg bg-background/60 px-2 pt-1.5 pb-2 backdrop-blur-sm"
     >
-      <span className="text-[11px] text-muted-foreground">La forma ahora</span>
+      <span className="text-[11px] text-muted-foreground">El triángulo ahora</span>
       <svg ref={ref} viewBox="-1 -1 2 2" className="size-16 overflow-visible">
         <polygon
           fill="var(--foreground)"

@@ -128,7 +128,7 @@ export function shapeCurve(trajectory: Trajectory): Float64Array {
 /**
  * La estela de la forma: los puntos de la esfera en [time − span, time], de
  * la cola a la cabeza, en `out` ([x0, y0, z0, …], a radio `radius`). Al
- * terminar, `state` es el estado en `time`: el de «la forma ahora».
+ * terminar, `state` es el estado en `time`: el de «el triángulo ahora».
  */
 export function sampleShapeTrail(
   trajectory: Trajectory,
@@ -149,26 +149,22 @@ export function sampleShapeTrail(
 }
 
 /**
- * «La forma ahora»: las posiciones de los tres cuerpos sin traslación, tamaño
- * ni giro, [x1, y1, x2, y2, x3, y3]. El centro de masas en el origen, la suma
- * de distancias al cuadrado igual a 1 (R = 1) y el lado 1–2 horizontal, con el
- * cuerpo 1 a la izquierda, como en las condiciones iniciales de 2013. Dos
- * estados con el mismo punto en la esfera dan el mismo triángulo.
+ * «El triángulo ahora», el recuadro de la escena: las posiciones de los tres
+ * cuerpos, [x1, y1, x2, y2, x3, y3], centradas en el centro de masas y a
+ * tamaño fijo (suma de distancias al cuadrado igual a 1, R = 1), pero con su
+ * giro real. La esfera no ve ese giro y el recuadro sí: en Lagrange el
+ * triángulo gira mientras su punto sigue quieto en el polo, y eso es lo que
+ * enseña la esfera (gira, pero su forma no cambia). Sin el giro, en Lagrange
+ * no se movería nada en toda la escena.
  */
-export function canonicalTriangle(state: StateVector, out: Float64Array): Float64Array {
+export function triangleNow(state: StateVector, out: Float64Array): Float64Array {
   const cx = (state[0] + state[STRIDE] + state[2 * STRIDE]) / 3;
   const cy = (state[1] + state[STRIDE + 1] + state[2 * STRIDE + 1]) / 3;
-  // Ángulo del lado 1 → 2: se gira todo para llevarlo a +x.
-  const angle = Math.atan2(state[STRIDE + 1] - state[1], state[STRIDE] - state[0]);
-  const cos = Math.cos(-angle);
-  const sin = Math.sin(-angle);
   let sum = 0;
   for (let b = 0; b < 3; b++) {
-    const x = state[b * STRIDE] - cx;
-    const y = state[b * STRIDE + 1] - cy;
-    out[b * 2] = x * cos - y * sin;
-    out[b * 2 + 1] = x * sin + y * cos;
-    sum += x * x + y * y;
+    out[b * 2] = state[b * STRIDE] - cx;
+    out[b * 2 + 1] = state[b * STRIDE + 1] - cy;
+    sum += out[b * 2] ** 2 + out[b * 2 + 1] ** 2;
   }
   const scale = 1 / Math.sqrt(sum);
   for (let i = 0; i < 6; i++) out[i] *= scale;
@@ -188,7 +184,7 @@ export interface SphereView {
  * del cuerpo 3, donde arrancan cinco de las seis órbitas, y 20° por encima
  * del ecuador para ver el norte. Los choques 1–3 y 2–3 quedan a izquierda y
  * derecha y el 1–2, detrás, como en la Fig. 1 de 2013; el cuerpo 1, a la
- * izquierda, como en «la forma ahora».
+ * izquierda, como en las condiciones iniciales.
  */
 export const SHAPE_VIEW: SphereView = { azimuth: -90, elevation: 20 };
 

@@ -210,7 +210,7 @@ export function OrbitPlayer({
                 <div
                   className="absolute inset-0"
                   role="img"
-                  aria-label={`${name} en la esfera de formas: la curva es cómo cambia la forma del triángulo durante el periodo y el punto, su forma en este instante, dibujada también en la esquina.`}
+                  aria-label={`${name} en la esfera de formas: la curva es cómo cambia la forma del triángulo durante el periodo y el punto, su forma en este instante; en la esquina, el triángulo de ahora, con su giro.`}
                 >
                   <ShapeScene
                     slug={slug}
@@ -320,8 +320,8 @@ export function OrbitPlayer({
             equilátero; en el ecuador, los tres alineados, y el color del arco dice qué cuerpo queda en medio. Las bolitas
             pareadas son choques de dos cuerpos.{" "}
             {slug === "lagrange"
-              ? "En Lagrange el punto no se mueve del polo: el triángulo gira, pero su forma nunca cambia."
-              : "El punto es la forma de ahora, y el recuadro la dibuja."}
+              ? "En Lagrange el punto no se mueve del polo: el triángulo gira (míralo en el recuadro), pero su forma nunca cambia."
+              : "El punto es la forma de ahora; el recuadro dibuja el triángulo con su giro, que la esfera no tiene en cuenta."}
             {coarse ? " Activa «Girar con el dedo» para girarla" : " Arrastra para girarla"}, o elige una vista: «Desde el
             polo» enseña el hemisferio norte con los tres choques en el borde.
           </p>

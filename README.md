@@ -105,8 +105,9 @@ dice en qué capítulo estás y deja saltar entre ellos.
   ahí una curva. Lagrange es un punto quieto en el polo, y los nombres
   Butterfly, Moth, Goggles y Yin-Yang describen la figura que trazan aquí, como
   en la Fig. 1 de Šuvakov y Dmitrašinović (2013). En el detalle se gira, con
-  vistas «De frente» y «Desde el polo», un recuadro dibuja «la forma ahora» y
-  la vista va en la URL (`?vista=forma`).
+  vistas «De frente» y «Desde el polo»; un recuadro dibuja el triángulo de
+  ahora con su giro (en Lagrange gira mientras el punto sigue quieto), y la
+  vista va en la URL (`?vista=forma`).
 - **Estado conservado** al volver a la galería: filtro, vista, scroll y foco en
   la tarjeta abierta; y cada órbita recuerda su instante y su velocidad.
 - **Explorador**: eliges la velocidad inicial, se mide cuánto vuelve el sistema
