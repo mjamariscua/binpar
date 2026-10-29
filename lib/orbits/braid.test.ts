@@ -9,6 +9,7 @@ import {
   buildBraid,
   cameraDirection,
   frameDistance,
+  viewDistance,
   nextLap,
   parseView,
   projectPoint,
@@ -145,6 +146,17 @@ describe("cámara y proyección", () => {
     expect(frameDistance(1, 90, 0.5)).toBeGreaterThan(frameDistance(1, 90, 1));
     // En uno ancho manda el vertical: igual que el cuadrado.
     expect(frameDistance(1, 90, 2)).toBeCloseTo(frameDistance(1, 90, 1), 12);
+  });
+
+  it("viewDistance encuadra la caja que se ve desde la vista elegida", () => {
+    // Lateral, caja 2 × 1 × 1 (semiejes 1, 0,5, 0,5), 90° y visor cuadrado: semiancho 1 → 1, más la semiprofundidad 0,5.
+    expect(viewDistance([1, 0.5, 0.5], BRAID_VIEWS.lateral, 90, 1)).toBeCloseTo(1.5, 12);
+    // De frente se ve la cara de 1 × 1: mucho más cerca que en lateral.
+    expect(viewDistance([1, 0.5, 0.5], BRAID_VIEWS.frente, 90, 1)).toBeCloseTo(0.5 + 1, 12);
+    // Ajusta más que la esfera que contiene la caja.
+    expect(viewDistance([1, 0.5, 0.5], BRAID_VIEWS.perspectiva, 35, 1.6)).toBeLessThan(
+      frameDistance(Math.hypot(1, 0.5, 0.5), 35, 1.6),
+    );
   });
 
   it("sliceFrame da las cuatro esquinas del recorrido en ese instante", () => {

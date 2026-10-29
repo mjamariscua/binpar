@@ -15,6 +15,7 @@ import {
   cameraDirection,
   frameDistance,
   nextLap,
+  viewDistance,
   sliceX,
   type BraidViewName,
 } from "@/lib/orbits/braid";
@@ -27,8 +28,8 @@ import { usePlaybackStore } from "@/lib/store/playback-store";
 
 /** Campo de visión vertical: poca perspectiva, para que la trenza no se deforme. */
 const FOV = 35;
-/** Margen sobre la esfera que contiene la trenza. */
-const FRAME_MARGIN = 1.08;
+/** Margen alrededor de la trenza al encuadrarla. */
+const FRAME_MARGIN = 1.06;
 /** Radio de los cuerpos, como fracción del lado de la órbita. */
 const BODY_RADIUS = 0.022;
 /** Constante de tiempo del cambio de vista de cámara, en segundos. */
@@ -85,7 +86,7 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
   // drei <Line> espera un array plano de números (no admite Float32Array).
   const strands = useMemo(() => braid.strands.map((s) => Array.from(s)), [braid]);
 
-  // Centro de la trenza y radio de la esfera que la contiene: el encuadre vale para cualquier vista.
+  // Centro de la trenza y semiejes de la caja que la contiene (X = tiempo, Y = y, Z = x).
   const target = useMemo(
     () =>
       new Vector3(
@@ -95,8 +96,14 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
       ),
     [bounds, lengthPerPeriod, periods],
   );
-  const radius = 0.5 * Math.hypot(periods * lengthPerPeriod, bounds.maxY - bounds.minY, bounds.maxX - bounds.minX);
-  const distance = frameDistance(radius, FOV, size.width / size.height) * FRAME_MARGIN;
+  const half = useMemo(
+    () =>
+      [(periods * lengthPerPeriod) / 2, (bounds.maxY - bounds.minY) / 2, (bounds.maxX - bounds.minX) / 2] as const,
+    [bounds, lengthPerPeriod, periods],
+  );
+  const aspect = size.width / size.height;
+  // Planos de recorte con la esfera que contiene la trenza: valen para cualquier giro.
+  const sphereDistance = frameDistance(Math.hypot(...half), FOV, aspect);
 
   // Marco del recorrido en el plano de la órbita, a la altura x = 0 del corte (Z = x, Y = y).
   const frame = useMemo(
@@ -112,13 +119,8 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
 
   return (
     <>
-      <PerspectiveCamera makeDefault fov={FOV} near={distance / 50} far={distance * 10} />
-      <CameraRig
-        target={target}
-        distance={distance}
-        camera={camera}
-        reducedMotion={reducedMotion}
-      />
+      <PerspectiveCamera makeDefault fov={FOV} near={sphereDistance / 50} far={sphereDistance * 10} />
+      <CameraRig target={target} half={half} aspect={aspect} camera={camera} reducedMotion={reducedMotion} />
       {interactive && (
         <OrbitControls
           makeDefault
@@ -161,18 +163,22 @@ function BraidContent({ slug, trajectory, camera, interactive, onRotateStart }: 
  */
 function CameraRig({
   target,
-  distance,
+  half,
+  aspect,
   camera,
   reducedMotion,
 }: {
   target: Vector3;
-  distance: number;
+  half: readonly [number, number, number];
+  aspect: number;
   camera: BraidViewName | null;
   reducedMotion: boolean;
 }) {
   const invalidate = useThree((s) => s.invalidate);
   const goal = useMemo(() => new Vector3(), []);
   const arrived = useRef(false);
+  // Cada vista encuadra lo que se ve desde ella: de frente, la cara de la órbita; en lateral, la trenza entera.
+  const distance = camera === null ? 0 : viewDistance(half, BRAID_VIEWS[camera], FOV, aspect) * FRAME_MARGIN;
 
   useEffect(() => {
     arrived.current = false;

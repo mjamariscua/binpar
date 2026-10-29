@@ -168,6 +168,42 @@ export function frameDistance(radius: number, fovDeg: number, aspect: number): n
   return radius / Math.sin(Math.min(vertical, horizontal) / 2);
 }
 
+/**
+ * Distancia a la que poner una cámara en perspectiva, mirando desde `view`
+ * hacia el centro de una caja de semiejes `half` [X, Y, Z], para que la caja
+ * quepa entera. Ajusta mejor que la esfera de frameDistance en una trenza
+ * alargada: encuadra lo que de verdad se ve desde esa dirección (semiancho y
+ * semialto proyectados) y suma la semiprofundidad, para que también quepa la
+ * cara más cercana a la cámara.
+ */
+export function viewDistance(
+  half: readonly [number, number, number],
+  view: BraidView,
+  fovDeg: number,
+  aspect: number,
+): number {
+  const [dx, dy, dz] = cameraDirection(view);
+  let halfWidth = 0;
+  let halfHeight = 0;
+  let halfDepth = 0;
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const X = sx * half[0];
+        const Y = sy * half[1];
+        const Z = sz * half[2];
+        const [right, up] = projectPoint(X, Y, Z, view);
+        halfWidth = Math.max(halfWidth, Math.abs(right));
+        halfHeight = Math.max(halfHeight, Math.abs(up));
+        halfDepth = Math.max(halfDepth, Math.abs(X * dx + Y * dy + Z * dz));
+      }
+    }
+  }
+  const vertical = (fovDeg * Math.PI) / 180;
+  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * aspect);
+  return Math.max(halfWidth / Math.tan(horizontal / 2), halfHeight / Math.tan(vertical / 2)) + halfDepth;
+}
+
 /** Proyecta una hebra entera a una lista plana [x0, y0, x1, y1, …], lista para simplificar y pasar a SVG. */
 export function projectStrand(strand: Float32Array, view: BraidView): number[] {
   const out: number[] = new Array((strand.length / 3) * 2);
