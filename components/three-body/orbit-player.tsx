@@ -24,6 +24,7 @@ import { useInsideStore } from "@/lib/store/inside-store";
 import { usePlaybackStore } from "@/lib/store/playback-store";
 import { LookButtons, LookSurface } from "./inside-look";
 import { PlaybackControls } from "./playback-controls";
+import { PLAYER_ID } from "./show-shape-button";
 
 // three.js y las escenas se descargan solo al abrir un detalle; la trenza y «Dentro», solo si se eligen.
 const OrbitScene = lazy(() => import("./orbit-scene"));
@@ -167,8 +168,9 @@ export function OrbitPlayer({
     <section aria-label={`Simulación de ${name}`} className="flex flex-col gap-5">
       <ViewTransition name={`orbita-${slug}`} share="morph" default="none">
       <div
+        id={PLAYER_ID}
         // En escritorio, más apaisado: así los controles quedan dentro de la primera pantalla (a 1440×900 empezaban en y = 915).
-        className="relative aspect-square w-full overflow-hidden rounded-xl border border-border sm:aspect-[4/3] lg:aspect-[16/10]"
+        className="relative aspect-square w-full scroll-mt-20 overflow-hidden rounded-xl border border-border sm:aspect-[4/3] lg:aspect-[16/10]"
         style={{ background: SCENE_BACKGROUND }}
       >
         <div className="absolute inset-0">{is3D ? braidPoster : isShape ? shapePoster : poster}</div>

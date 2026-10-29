@@ -46,7 +46,8 @@ const TRAIL_POINTS = 120;
 const POINT_RADIUS = 0.04;
 const COLLISION_RADIUS = 0.028;
 const MARK_COLOR = "#f3efe6";
-const CURVE_COLOR = "#cfc9bd";
+/** Por debajo del blanco: con el umbral del bloom (0,22), una curva más clara brillaría tanto como el punto. */
+const CURVE_COLOR = "#8a857c";
 const GRID_COLOR = "#2a2d38";
 /** Cuánto atenúa el velo lo que queda detrás de la esfera. */
 const VEIL_OPACITY = 0.62;

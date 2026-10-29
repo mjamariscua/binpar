@@ -3,6 +3,7 @@ import { ScrollX } from "@/components/ui/scroll-x";
 import { SHAPE_SPHERE_NOTE, type Citation, type PeriodicOrbit } from "@/lib/orbits/catalog";
 import { BODY_COLORS } from "@/lib/orbits/colors";
 import type { OrbitSummary } from "@/lib/orbits/summary";
+import { ShowShapeButton } from "./show-shape-button";
 import { formatInteger, formatScientific, formatValue } from "@/lib/format";
 
 /*
@@ -33,8 +34,19 @@ export function OrbitSummaryPanel({ orbit, summary }: { orbit: PeriodicOrbit; su
           En la vista «Dentro», la órbita es el suelo y tú estás en ella: en el centro de masas, el único punto que no
           se mueve, o viajando sobre un cuerpo, desde donde ves cómo se mueven los otros dos respecto a ti.
         </p>
+        <p className="mt-3 text-muted-foreground">
+          En la vista «Forma» solo cuenta la forma del triángulo que hacen los tres cuerpos. Sus posiciones son 6
+          números; sin el centro de masas, que no se mueve, quedan 4, un espacio de cuatro dimensiones, y sin el
+          tamaño ni el giro del triángulo, 2: un punto de una esfera. Cada órbita dibuja una curva en ella; la de
+          Lagrange es un solo punto, porque su triángulo nunca cambia de forma.
+        </p>
         {/* Antes iba bajo el título y empujaba los controles fuera de la primera pantalla. */}
-        {orbit.family === "suvakov-2013" && <p className="mt-3 text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>}
+        {orbit.family === "suvakov-2013" && (
+          <div>
+            <p className="mt-3 text-muted-foreground">{SHAPE_SPHERE_NOTE}</p>
+            <ShowShapeButton />
+          </div>
+        )}
       </Section>
 
       <Section title="Magnitudes">
